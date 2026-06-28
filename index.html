@@ -180,6 +180,7 @@
   .pkg:nth-child(1)::before{background:var(--acc)}
   .pkg:nth-child(2)::before{background:var(--gold)}
   .pkg:nth-child(3)::before{background:var(--mint)}
+  .pkg.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 18px 44px rgba(224,105,124,.2)}
   .stepc:nth-child(1) .n{color:var(--acc)}
   .stepc:nth-child(2) .n{color:var(--mint)}
   .stepc:nth-child(3) .n{color:var(--gold)}
@@ -251,9 +252,25 @@
       <div class="opt-row" id="srcRow"></div>
     </div>
 
+    <div class="reveal" id="pkgReveal">
+      <div class="divider"></div>
+      <div class="steplab"><b>03</b> &nbsp;Choose how you'll own it</div>
+      <div class="pkgs">
+        <div class="pkg"><h3>Digital</h3><div class="price">$10</div>
+          <ul><li>One-edition NFT — provenance &amp; on-chain ownership</li><li>High-resolution download</li><li>Personal-use license</li></ul>
+          <button class="btn btn-ghost" onclick="selectTier('digital',this)">Get the file</button></div>
+        <div class="pkg feat"><span class="badge">Popular</span><h3>Print</h3><div class="price">$40</div>
+          <ul><li>Everything in Digital</li><li>Museum-grade archival print</li><li>8 × 10 in</li><li>Shipped to your door</li></ul>
+          <button class="btn btn-primary" onclick="selectTier('print',this)">Order a print</button></div>
+        <div class="pkg"><h3>Collector</h3><div class="price">$90</div>
+          <ul><li>Museum-grade archival print</li><li>12 × 18 in</li><li>Shipped to your door</li><li>Hand-numbered certificate of authenticity</li></ul>
+          <button class="btn btn-ghost" onclick="selectTier('collector',this)">Go collector</button></div>
+      </div>
+    </div>
+
     <div class="reveal" id="genReveal">
       <div class="divider"></div>
-      <div class="steplab"><b>03</b> &nbsp;Upload your file &amp; generate</div>
+      <div class="steplab"><b>04</b> &nbsp;Upload your file &amp; generate</div>
       <div class="gen">
         <label class="drop" id="drop">
           <input type="file" id="fileInput" hidden>
@@ -265,26 +282,12 @@
           <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <div class="gnote" id="genStatus"></div>
         <div class="preview" id="previewWrap" style="display:none"><canvas id="previewCanvas" width="480" height="720"></canvas></div>
-      </div>
-    </div>
-
-    <div class="reveal" id="pkgReveal">
-      <div class="divider"></div>
-      <div class="steplab"><b>04</b> &nbsp;Choose how you'll own it</div>
-      <div class="pkgs">
-        <div class="pkg"><h3>Digital</h3><div class="price">$10</div>
-          <ul><li>One-edition NFT — provenance &amp; on-chain ownership</li><li>High-resolution download</li><li>Personal-use license</li></ul>
-          <button class="btn btn-ghost" onclick="buyTier('digital')">Get the file</button></div>
-        <div class="pkg feat"><span class="badge">Popular</span><h3>Print</h3><div class="price">$40</div>
-          <ul><li>Everything in Digital</li><li>Museum-grade archival print</li><li>8 × 10 in</li><li>Shipped to your door</li></ul>
-          <button class="btn btn-primary" onclick="buyTier('print')">Order a print</button></div>
-        <div class="pkg"><h3>Collector</h3><div class="price">$90</div>
-          <ul><li>Museum-grade archival print</li><li>12 × 18 in</li><li>Shipped to your door</li><li>Hand-numbered certificate of authenticity</li></ul>
-          <button class="btn btn-ghost" onclick="buyTier('collector')">Go collector</button></div>
+        <button class="btn btn-primary" id="checkoutBtn" style="display:none" onclick="buyTier(window.selectedTier)">Continue to checkout</button>
       </div>
     </div>
   </div>
-</div></section>
+</div>
+</section>
 
 <section><div class="wrap">
   <div class="head">
@@ -381,14 +384,25 @@ function pickCat(cat){
   document.getElementById('srcReveal').classList.add('open');
   document.getElementById('genReveal').classList.remove('open');
   document.getElementById('pkgReveal').classList.remove('open');
+  document.querySelectorAll('.pkg').forEach(p=>p.classList.remove('sel'));
+  window.selectedTier=null; var cb=document.getElementById('checkoutBtn'); if(cb) cb.style.display='none';
 }
 function pickSrc(el){
   document.querySelectorAll('#srcRow .opt').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
   selectedSource=el.querySelector('.t')?el.querySelector('.t').textContent:'';
+  document.getElementById('pkgReveal').classList.add('open');
+  document.getElementById('genReveal').classList.remove('open');
+  setTimeout(()=>document.getElementById('pkgReveal').scrollIntoView({behavior:'smooth',block:'nearest'}),200);
+}
+function selectTier(tier,btn){
+  window.selectedTier=tier;
+  document.querySelectorAll('.pkg').forEach(p=>p.classList.remove('sel'));
+  if(btn&&btn.closest) btn.closest('.pkg').classList.add('sel');
+  var labels={digital:'Get your Digital piece — $10',print:'Order your Print — $40',collector:'Order your Collector — $90'};
+  var cb=document.getElementById('checkoutBtn'); cb.textContent=labels[tier]||'Continue to checkout'; cb.style.display='none';
   document.getElementById('genReveal').classList.add('open');
-  document.getElementById('pkgReveal').classList.remove('open');
-  setTimeout(()=>document.getElementById('genReveal').scrollIntoView({behavior:'smooth',block:'nearest'}),200);
+  setTimeout(function(){document.getElementById('genReveal').scrollIntoView({behavior:'smooth',block:'nearest'});},200);
 }
 function setSize(inches){
   const heights={10:235,18:360};const widthDisp={10:8,18:12}[inches];
@@ -480,9 +494,9 @@ async function doGenerate(){
   if(url) showResult(url);
   window.__genpiResult=res;
   if(url) uploadArtwork(url).then(function(h){ if(h&&window.__genpiResult){ window.__genpiResult.hostedUrl=h.url; window.__genpiResult.publicId=h.publicId; } });
-  st.textContent='Done — generated on your device. Now choose how to own it.'; btn.disabled=false;
-  var pk=document.getElementById('pkgReveal'); pk.classList.add('open');
-  setTimeout(function(){pk.scrollIntoView({behavior:'smooth',block:'nearest'});},220);
+  st.textContent='Done — generated on your device. Continue to checkout below.'; btn.disabled=false;
+  var cb=document.getElementById('checkoutBtn'); cb.style.display='inline-flex';
+  setTimeout(function(){cb.scrollIntoView({behavior:'smooth',block:'nearest'});},220);
 }
 </script>
 <script>
