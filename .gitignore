@@ -1,0 +1,19 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
+
+# Business-sensitive — keep OUT of the public repo
+genpi-pricing-model.xlsx
+Prodigi/
+*.bat
+
+# Internal handoff / ops notes (strategy, fulfilment, setup — not for the public site repo)
+CLAUDE-CODE-HANDOFF.md
+OLLI-SETUP.md
+PRODIGI-AUTOMATION.md
+NAHUEL-INTEGRATION-NOTE.md
+NFT-SPEC.md
+README.md
