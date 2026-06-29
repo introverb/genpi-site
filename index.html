@@ -59,6 +59,8 @@
   .nav .row{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
   .brand{font-family:var(--disp);font-weight:600;letter-spacing:.04em;font-size:1.05rem}
   .brand b{color:var(--acc)}
+  .site-head{position:relative;z-index:10;padding:22px 0 4px}
+  .site-head .logo svg{display:block;width:96px;height:auto}
   .nav .links{display:flex;gap:26px;align-items:center;font-size:.9rem;color:var(--muted)}
   .nav .links a{text-decoration:none;transition:color .2s}.nav .links a:hover{color:var(--text)}
   @media(max-width:680px){.nav .links a:not(.btn){display:none}}
@@ -214,6 +216,10 @@
 <div class="aurora"><span class="a1"></span><span class="a2"></span><span class="a3"></span><span class="a4"></span></div>
 <div class="grid"></div>
 
+<header class="site-head"><div class="wrap">
+  <span class="logo" aria-label="GenPi"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 186" role="img" aria-label="GenPi"><defs><linearGradient id="gpg" x1="0" y1="86" x2="0" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f0879a"/><stop offset=".5" stop-color="#f0cf6a"/><stop offset="1" stop-color="#8fe3bf"/></linearGradient></defs><g transform="translate(54,-14)"><g stroke="url(#gpg)" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M46 80 L29 56 M46 80 L63 56 M29 56 L18 33 M29 56 L40 33 M63 56 L52 33 M63 56 L74 33"/></g><circle cx="46" cy="80" r="6.6" fill="#f0879a"/><circle cx="29" cy="56" r="5.1" fill="#f0cf6a"/><circle cx="63" cy="56" r="5.1" fill="#f0cf6a"/><circle cx="18" cy="33" r="3.9" fill="#8fe3bf"/><circle cx="40" cy="33" r="3.9" fill="#8fe3bf"/><circle cx="52" cy="33" r="3.9" fill="#8fe3bf"/><circle cx="74" cy="33" r="3.9" fill="#8fe3bf"/></g><text x="100" y="158" text-anchor="middle" font-family="'Space Grotesk','Helvetica Neue',Arial,sans-serif" font-weight="600" font-size="42" fill="#f4f0ef">Gen<tspan fill="#f0879a">Pi</tspan></text></svg></span>
+</div></header>
+
 <section class="hero">
   <canvas class="hero-canvas" aria-hidden="true"></canvas>
   <div class="hero-fade" aria-hidden="true"></div>
@@ -223,8 +229,6 @@
       <h1>Your biology,<br>rendered as <em>art</em>.</h1>
       <p class="lede">Turn your DNA or biometric data into a one-of-a-kind generative fractal — computed from the numbers that make you you, entirely on your own device.</p>
       <div class="btn-row">
-        <a href="#start" class="btn btn-primary">Create yours
-          <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <a href="#how" class="btn btn-ghost">How it works</a>
       </div>
     </div>
