@@ -519,7 +519,7 @@ async function doGenerate(){
   var hero=canvas.closest('.hero'); var ctx=canvas.getContext('2d'); if(!ctx) return;
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   var W=0,H=0,DPR=1,fontSize=17,fractal=null,cols=[],raf=null,last=0,dt=1;
-  var MINT=[150,228,194],GOLD=[240,207,106],PINK=[240,135,154],SOFT=[247,169,181],HEAD=[238,248,242];
+  var MINT=[150,228,194],GOLD=[240,207,106],PINK=[240,135,154],SOFT=[247,169,181],HEAD=[238,248,242],BRAND=[PINK,GOLD,MINT];
   var DIGITS='0123456789', LETTERS='ABCDEFGHJKLMNPRSTUVWXYZ', KANJI='空風水光命海天月星生';
   function glyph(){ var r=Math.random(); if(r<0.82) return DIGITS.charAt((Math.random()*DIGITS.length)|0); if(r<0.92) return KANJI.charAt((Math.random()*KANJI.length)|0); return LETTERS.charAt((Math.random()*LETTERS.length)|0); }
   function clamp(t){ return t<0?0:t>1?1:t; }
@@ -561,7 +561,7 @@ async function doGenerate(){
     cols=[]; if(!fractal) return;
     var rainL=Math.round(fractal.x+fractal.w*0.06)+fontSize*2, rainR=Math.round(fractal.x+fractal.w*0.94)-fontSize*2;
     for(var x=rainL; x<rainR; x+=fontSize)
-      cols.push({x:x,y:Math.random()*-H,speed:fontSize*(0.10+Math.random()*0.14),len:10+((Math.random()*10)|0),cells:{}});
+      cols.push({x:x,y:Math.random()*-H,speed:fontSize*(0.10+Math.random()*0.14),len:10+((Math.random()*10)|0),cells:{},col:BRAND[(Math.random()*BRAND.length)|0]});
   }
   function topAt(x){ var u=(x-fractal.x)/fractal.w; u=u<0?0:u>1?1:u; var ix=Math.round(u*(fractal.topN-1)); return fractal.top[ix]; }
   function resize(){
@@ -584,14 +584,13 @@ async function doGenerate(){
         var av=smooth((lt+OVER-yy)/FADE); if(av<=0.004) continue;
         if(c.cells[r]==null) c.cells[r]=glyph();
         var head=k===0, fade=1-k/c.len;
-        var warm=smooth((yy-(lt-FADE))/FADE)*0.5;
-        var col=head?HEAD:lerp(MINT,GOLD,warm);
+        var col=head?lerp(c.col,[246,250,248],0.6):c.col;
         var a=(head?0.95:0.16+0.6*fade)*av*GA;
         if(a>0.012){ ctx.fillStyle=rgba(col,a.toFixed(3)); ctx.fillText(c.cells[r],c.x,yy); }
       }
       if(Math.random()<0.02){ c.cells[hr-((Math.random()*c.len)|0)]=glyph(); }
       c.y+=c.speed*dt;
-      if((hr-c.len)*fontSize>lt+OVER+fontSize){ c.y=Math.random()*-H*0.5; c.speed=fontSize*(0.10+Math.random()*0.14); c.len=10+((Math.random()*10)|0); c.cells={}; }
+      if((hr-c.len)*fontSize>lt+OVER+fontSize){ c.y=Math.random()*-H*0.5; c.speed=fontSize*(0.10+Math.random()*0.14); c.len=10+((Math.random()*10)|0); c.cells={}; c.col=BRAND[(Math.random()*BRAND.length)|0]; }
     }
   }
   function drawStatic(){ ctx.clearRect(0,0,W,H); for(var i=0;i<cols.length;i++) cols[i].y=Math.random()*H; dt=1; drawRain(); drawFractal(); }
