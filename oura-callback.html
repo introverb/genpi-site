@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GenPI.org Oura browser-local connector reference</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; max-width: 900px; margin: 3rem auto; line-height: 1.45; padding: 0 1rem; }
+    button { padding: .8rem 1rem; font-size: 1rem; cursor: pointer; }
+    pre { background: #111; color: #ddd; padding: 1rem; overflow-x: auto; border-radius: 8px; }
+    .warn { background: #fff7d6; padding: .8rem 1rem; border-left: 4px solid #d5a300; }
+  </style>
+</head>
+<body>
+  <h1>Connect Oura → browser-local GenPI.org bundle</h1>
+  <p>
+    Reference only. The intended privacy path is: Oura Cloud → user's browser memory → local deterministic GenPI.org wearable/biodata image-generation engine. Raw Oura data should not be posted to a GenPI.org server.
+  </p>
+  <p class="warn">
+    Before production, Olli/developer must verify that Oura API resource endpoints allow browser CORS requests from the GenPI.org origin. Oura documents a client-side-only OAuth flow, but CORS still needs a real browser test.
+  </p>
+
+  <button id="connect">Connect Oura</button>
+  <button id="fetch" disabled>Fetch last 5 days into browser bundle</button>
+  <button id="download" disabled>Download bundle JSON for local test</button>
+  <pre id="log">No Oura token yet.</pre>
+
+<script>
+// Replace with GenPI.org's registered Oura application client ID and whitelisted redirect URI.
+const OURA_CLIENT_ID = "05c01ed2-e45f-4373-86eb-74c8fc0dde9a";
+const REDIRECT_URI = `${location.origin}${location.pathname}`;
+const SCOPES = ["daily", "heartrate", "spo2"].join(" ");
+const API_BASE = "https://api.ouraring.com/v2/usercollection";
+
+let accessToken = null;
+let currentBundle = null;
+
+function log(obj) {
+  document.getElementById("log").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+}
+
+function randomState() {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+}
+
+function parseHashToken() {
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (hash.get("access_token")) {
+    accessToken = hash.get("access_token");
+    sessionStorage.setItem("oura_oauth_state_seen", hash.get("state") || "");
+    history.replaceState({}, document.title, location.pathname + location.search);
+    document.getElementById("fetch").disabled = false;
+    log({ status: "Oura token received in browser memory", token_storage: "JavaScript variable only; do not store in localStorage", expires_in: hash.get("expires_in"), granted_scope: hash.get("scope") });
+  }
+}
+
+function startOuraOAuth() {
+  const state = randomState();
+  sessionStorage.setItem("oura_oauth_state", state);
+  const u = new URL("https://cloud.ouraring.com/oauth/authorize");
+  u.searchParams.set("response_type", "token"); // Oura client-side-only flow.
+  u.searchParams.set("client_id", OURA_CLIENT_ID);
+  u.searchParams.set("redirect_uri", REDIRECT_URI);
+  u.searchParams.set("scope", SCOPES);
+  u.searchParams.set("state", state);
+  location.href = u.toString();
+}
+
+function isoDate(d) { return d.toISOString().slice(0, 10); }
+function isoDateTime(d) { return d.toISOString().replace(/\.\d{3}Z$/, "Z"); }
+
+async function fetchJson(path, params) {
+  const u = new URL(API_BASE + path);
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+  const r = await fetch(u.toString(), { headers: { "Authorization": `Bearer ${accessToken}` } });
+  if (!r.ok) throw new Error(`${path} failed: ${r.status} ${await r.text()}`);
+  return await r.json();
+}
+
+async function fetchOuraLastFiveDays() {
+  if (!accessToken) throw new Error("No Oura token in browser memory");
+  const end = new Date();
+  const start = new Date(end.getTime() - 5 * 24 * 3600 * 1000);
+  const startDate = isoDate(start);
+  const endDate = isoDate(end);
+  const startDateTime = isoDateTime(start);
+  const endDateTime = isoDateTime(end);
+
+  const endpoints = {};
+  const calls = [
+    ["sleep", "/sleep", { start_date: startDate, end_date: endDate }],
+    ["daily_sleep", "/daily_sleep", { start_date: startDate, end_date: endDate }],
+    ["daily_activity", "/daily_activity", { start_date: startDate, end_date: endDate }],
+    ["daily_readiness", "/daily_readiness", { start_date: startDate, end_date: endDate }],
+    ["heart_rate", "/heartrate", { start_datetime: startDateTime, end_datetime: endDateTime }],
+    ["daily_spo2", "/daily_spo2", { start_date: startDate, end_date: endDate }]
+  ];
+
+  for (const [name, path, params] of calls) {
+    try { endpoints[name] = await fetchJson(path, params); }
+    catch (e) { endpoints[name] = { error: String(e), data: [] }; }
+  }
+
+  currentBundle = {
+    schema: "genpi-oura-api-v2-browser-bundle-v0.2",
+    source: "oura_api_v2_browser_local",
+    privacy_mode: "Oura Cloud payload fetched directly into browser memory; not uploaded to GenPI.org server by this reference connector.",
+    fetched_at: new Date().toISOString(),
+    window_hint: { start_date: startDate, end_date_exclusive: endDate, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "local" },
+    endpoints
+  };
+
+  document.getElementById("download").disabled = false;
+  window.dispatchEvent(new CustomEvent("genpi:oura-api-bundle-ready", { detail: currentBundle }));
+  const errs = Object.fromEntries(Object.entries(endpoints).filter(([k,v]) => v.error).map(([k,v]) => [k, v.error]));
+  log({ CORS_TEST_VERDICT: Object.keys(errs).length === 0 ? "PASS — all endpoints fetched directly from the browser" : "PARTIAL/FAIL — see endpoint_errors", endpoint_errors: errs, status: "Oura browser-local bundle ready", endpoint_counts: Object.fromEntries(Object.entries(endpoints).map(([k,v]) => [k, Array.isArray(v.data) ? v.data.length : 0])) });
+}
+
+function downloadBundle() {
+  const blob = new Blob([JSON.stringify(currentBundle, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "genpi_oura_api_v2_browser_bundle.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById("connect").onclick = startOuraOAuth;
+document.getElementById("fetch").onclick = () => fetchOuraLastFiveDays().catch(e => log({ error: String(e), note: "If this is a CORS error, use the stateless token-exchange flow for tokens only, then re-test whether resource fetches can remain browser-side." }));
+document.getElementById("download").onclick = downloadBundle;
+parseHashToken();
+</script>
+</body>
+</html>

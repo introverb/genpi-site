@@ -20,3 +20,15 @@ README.md
 print-render-blank.png
 brand/
 GO-LIVE.md
+CODE-STREAMLINE-BRIEF.md
+*.zip
+
+# Pyodide engine port — internal working dirs (never public)
+Files from Nahuel/
+pyodide-port/
+
+# Other internal docs (never public)
+NAHUEL-HANDOFF-MESSAGE.md
+PRIVACY-COPY-FALLBACK.md
+PYODIDE-PORT-BRIEF.md
+WALLET-CHOICE-SPEC.md
