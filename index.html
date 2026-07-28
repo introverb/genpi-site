@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="engines/genpi-dna-morphogenetic-engine.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -440,6 +441,8 @@ function drawPrintRender(dataUrl){
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
 var PAYMENT_LINKS={ digital:"", print:"", collector:"" };  // Stripe Payment Link URLs
+// NOTE: uploadArtwork is intentionally NOT called on generate (see TODO in doGenerate).
+// Wire it only after payment/order authorization (OLLI-INTEGRATION.md §3), with the Stripe→Make flow.
 async function uploadArtwork(dataUrl){
   if(!CLOUDINARY_CLOUD||!CLOUDINARY_PRESET||!dataUrl) return null;
   try{
@@ -500,13 +503,19 @@ async function doGenerate(){
   st.textContent='Generating locally…'; btn.disabled=true;
   var res;
   try{
-    if(window.GenPi && typeof window.GenPi.generate==='function'){ res=await window.GenPi.generate(f, selectedSource); }
+    if(selectedSource==='23andMe' || selectedSource==='Ancestry.com'){ res=await window.GenPiDNA.generate(f, selectedSource); }
+    else if(window.GenPi && typeof window.GenPi.generate==='function'){ res=await window.GenPi.generate(f, selectedSource); }
     else { res=await fallbackGenerate(f, selectedSource); }
   }catch(e){ st.textContent='Generation failed: '+((e&&e.message)||e); btn.disabled=false; return; }
   var url=(typeof res==='string')?res:(res&&(res.dataUrl||res.imageUrl));
   if(url){ showResult(url); drawPrintRender(url); }
   window.__genpiResult=res;
-  if(url) uploadArtwork(url).then(function(h){ if(h&&window.__genpiResult){ window.__genpiResult.hostedUrl=h.url; window.__genpiResult.publicId=h.publicId; } });
+  // TODO(post-payment upload): the finished PNG must upload to Cloudinary ONLY after payment /
+  //   order authorization (OLLI-INTEGRATION.md §3), to be built WITH the Stripe→Make payment
+  //   wiring. Disabled on-generate for now for ALL sources — the on-site preview uses the local
+  //   dataUrl and needs no upload; leaving this on would push DNA-derived artwork pre-payment.
+  //   Do NOT re-enable on generate.
+  // if(url) uploadArtwork(url).then(function(h){ if(h&&window.__genpiResult){ window.__genpiResult.hostedUrl=h.url; window.__genpiResult.publicId=h.publicId; } });
   st.textContent='Done — generated on your device. Now choose how to own it.'; btn.disabled=false;
   var pk=document.getElementById('pkgReveal'); pk.classList.add('open');
   setTimeout(function(){pk.scrollIntoView({behavior:'smooth',block:'nearest'});},220);
