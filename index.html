@@ -209,6 +209,36 @@
     .pkgs{grid-template-columns:1fr}
     .dimtag{right:auto;left:50%;top:auto;bottom:-46px;transform:translateX(-50%);text-align:center}
   }
+  /* ---- Step-1 data-onboarding help ---- */
+  .datahelp{margin-top:16px;display:flex;justify-content:center}
+  .datahelp .dh-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--hair2);background:rgba(255,255,255,.03);color:var(--text);font-family:var(--disp);font-weight:500;font-size:.92rem;cursor:pointer;transition:border-color .2s,background .2s}
+  .datahelp .dh-btn:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.06)}
+  .datahelp .dh-note{display:flex;align-items:center;gap:9px;padding:12px 16px;border-radius:12px;background:rgba(143,227,191,.10);border:1px solid rgba(143,227,191,.28);color:var(--mint);font-size:.9rem;line-height:1.5;text-align:left;max-width:520px}
+  .dm-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,6,14,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .dm-overlay[hidden]{display:none}
+  .dm-card{position:relative;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,#141019,#100c16);border:1px solid var(--hair2);border-radius:20px;padding:26px 22px 24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .dm-x{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--text);font-size:1.5rem;line-height:1;cursor:pointer}
+  .dm-x:hover{background:rgba(255,255,255,.08)}
+  .dm-eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--acc-soft);margin-bottom:10px}
+  .dm-title{font-family:var(--disp);font-size:1.3rem;font-weight:600;margin:2px 40px 12px 0;line-height:1.15}
+  .dm-keep{background:rgba(240,207,106,.10);border:1px solid rgba(240,207,106,.28);color:var(--gold);border-radius:12px;padding:11px 14px;font-size:.86rem;line-height:1.5;margin-bottom:14px}
+  .dm-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:48px;border-radius:999px;background:var(--text);color:#100c16;font-family:var(--disp);font-weight:600;text-decoration:none;margin:2px 0 16px;transition:transform .16s}
+  .dm-link:hover{transform:translateY(-1px)}
+  .dm-toggle{display:flex;gap:8px;margin-bottom:16px}
+  .dm-toggle button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--hair2);background:rgba(255,255,255,.03);color:var(--muted);font-family:var(--disp);font-weight:500;cursor:pointer}
+  .dm-toggle button.on{border-color:var(--acc);color:var(--text);background:rgba(240,135,154,.12)}
+  .dm-steps{list-style:none;counter-reset:s;padding:0;margin:0 0 14px}
+  .dm-steps li{counter-increment:s;position:relative;padding:9px 0 9px 40px;color:var(--muted);font-size:.94rem;line-height:1.5;border-bottom:1px solid var(--hair)}
+  .dm-steps li b{color:var(--text);font-weight:600}
+  .dm-steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--hair2);color:var(--text);font-family:var(--mono);font-size:.8rem;display:flex;align-items:center;justify-content:center}
+  .dm-expect{font-size:.86rem;color:var(--dim);font-style:italic;margin:2px 0 12px}
+  .dm-formats{font-family:var(--mono);font-size:.76rem;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .dm-privacy{display:flex;gap:9px;align-items:flex-start;font-size:.84rem;color:var(--mint);line-height:1.5}
+  .dm-shot{margin:12px 0;border:1px dashed var(--hair2);border-radius:10px;padding:16px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;background:rgba(255,255,255,.015)}
+  .dm-choose{display:flex;flex-direction:column;gap:10px}
+  .dm-choose button{min-height:52px;border-radius:12px;border:1px solid var(--hair2);background:rgba(255,255,255,.03);color:var(--text);font-family:var(--disp);font-weight:500;font-size:.96rem;cursor:pointer;text-align:left;padding:0 16px}
+  .dm-choose button:hover{border-color:rgba(255,255,255,.4)}
+  @media(max-width:560px){ .dm-card{padding:22px 15px 20px} .dm-title{font-size:1.14rem} }
 </style>
 </head>
 <body>
@@ -261,6 +291,8 @@
       </div>
     </div>
 
+    <div id="dataHelp" class="datahelp"></div>
+
     <div class="reveal" id="srcReveal">
       <div class="divider"></div>
       <div class="steplab"><b>02</b> &nbsp;Choose your source</div>
@@ -272,7 +304,7 @@
       <div class="steplab"><b>03</b> &nbsp;Upload your file &amp; generate</div>
       <div class="gen">
         <label class="drop" id="drop">
-          <input type="file" id="fileInput" hidden>
+          <input type="file" id="fileInput" hidden accept=".txt,.csv,.zip">
           <svg class="ico di" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
           <div class="dt" id="dropTitle">Choose your data file</div>
           <div class="ds" id="dropSub">Read locally in your browser — never uploaded.</div>
@@ -385,11 +417,13 @@ function pickCat(cat){
   document.getElementById('pkgReveal').classList.remove('open');
   document.querySelectorAll('.pkg').forEach(p=>p.classList.remove('sel'));
   window.selectedTier=null; var cb=document.getElementById('checkoutBtn'); if(cb) cb.style.display='none';
+  if(window.updateDataHelp) updateDataHelp();
 }
 function pickSrc(el){
   document.querySelectorAll('#srcRow .opt').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
   selectedSource=el.querySelector('.t')?el.querySelector('.t').textContent:'';
+  if(window.updateDataHelp) updateDataHelp();
   document.getElementById('genReveal').classList.add('open');
   document.getElementById('pkgReveal').classList.remove('open');
   setTimeout(()=>document.getElementById('genReveal').scrollIntoView({behavior:'smooth',block:'nearest'}),200);
@@ -503,7 +537,7 @@ async function doGenerate(){
   st.textContent='Generating locally…'; btn.disabled=true;
   var res;
   try{
-    if(selectedSource==='23andMe' || selectedSource==='Ancestry.com'){ res=await window.GenPiDNA.generate(f, selectedSource); }
+    if(selectedSource==='23andMe' || selectedSource==='Ancestry.com'){ var dnaFile=await extractDnaFile(f); res=await window.GenPiDNA.generate(dnaFile, selectedSource); }
     else if(window.GenPi && typeof window.GenPi.generate==='function'){ res=await window.GenPi.generate(f, selectedSource); }
     else { res=await fallbackGenerate(f, selectedSource); }
   }catch(e){ st.textContent='Generation failed: '+((e&&e.message)||e); btn.disabled=false; return; }
@@ -608,6 +642,123 @@ async function doGenerate(){
   var rt; window.addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(resize,200); });
   window.addEventListener('load',function(){ setTimeout(resize,60); });
   if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ if(reduce) drawStatic(); }); }
+})();
+</script>
+<script>
+/* ===== Step-1 data-onboarding help (per STEP1-DATA-GUIDE.md). Content + tiny front-end; nothing leaves the browser. ===== */
+(function(){
+  var PRIV="Your file is read privately in your own browser to make your artwork — it's never uploaded or stored.";
+  var KEEP="Keep this GenPi tab open — when your file is ready, come right back here and drop it in.";
+  function shot(l){ return '<div class="dm-shot" data-slot="'+l+'">screenshot slot — '+l+'</div>'; }
+  function stepsHTML(a){ return '<ol class="dm-steps"><li>'+a.join('</li><li>')+'</li></ol>'; }
+  function linkBtn(u,l){ return '<a class="dm-link" href="'+u+'" target="_blank" rel="noopener">'+l+' ↗</a>'; }
+  function privLine(){ return '<div class="dm-privacy"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none;margin-top:2px"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>'+PRIV+'</span></div>'; }
+  function keepLine(){ return '<div class="dm-keep">'+KEEP+'</div>'; }
+
+  var DNA={
+    '23andMe':{ title:'Get your 23andMe raw data', link:'https://you.23andme.com/tools/data/download/', linkLabel:'Open the 23andMe download page',
+      steps:['Sign in to 23andMe (the button above opens the download page).','Go to the profile menu (your name, top right) → <b>Settings</b>.','Scroll to the <b>23andMe Data</b> section → <b>View</b> / <b>Download</b>.','Scroll to <b>Download Raw Data</b>, request the download, and confirm.','23andMe prepares your file and emails you when it’s ready (a few minutes to a few hours). Download the <b>.txt</b> (or <b>.zip</b>).','Come back to this tab and drop it in — a .zip is fine, we open it for you.'],
+      expect:'23andMe may take a little while to prepare your file and email you a link — grab it, then come back.',
+      formats:'Accepted: the downloaded .txt, or the .zip it comes in (we extract it automatically).' },
+    'Ancestry.com':{ title:'Get your AncestryDNA data', link:'https://www.ancestry.com/dna/settings', linkLabel:'Open Ancestry DNA settings',
+      steps:['Sign in to Ancestry (the button above opens DNA settings).','Open your DNA test → <b>Settings</b> (top-right of the DNA page).','Under <b>Actions / Download DNA Data</b>, click <b>Download DNA Data</b>.','Enter your password → Ancestry <b>emails you a confirmation link</b> — click it.','Return to the download page and download your <b>.zip</b>.','Come back to this tab and drop the .zip in — we open it for you.'],
+      expect:'Ancestry sends a confirmation email you must click before the download unlocks — do that, then come back.',
+      formats:'Accepted: the downloaded .zip (contains a .txt — we extract it automatically).' }
+  };
+  var APPLE={ title:'Get your Apple Health export', link:null,
+    steps:['On your iPhone, open the <b>Health</b> app.','Tap your <b>profile picture</b> (top right).','Scroll down → <b>Export All Health Data</b>.','Wait for it to build <b>export.zip</b>, then <b>Save to Files</b> (or AirDrop to your computer).','Come back to this tab (same phone, or your computer) and upload the <b>export.zip</b>.'],
+    expect:'This one’s done in the Health app on your iPhone — export, then upload the zip here. Best done on the phone you’re browsing from.',
+    formats:'Accepted: export.zip from the Health app.' };
+  var OURA="Nothing to download. Tap Connect Oura, approve access, and your last few days of data flow straight into your browser to make your artwork. You’re ready — go ahead.";
+
+  var overlay, body, lastFocus, provider='23andMe';
+  function ensure(){
+    if(overlay) return;
+    overlay=document.createElement('div'); overlay.className='dm-overlay'; overlay.id='dataModal'; overlay.hidden=true;
+    overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
+    overlay.innerHTML='<div class="dm-card" role="document"><button class="dm-x" id="dmClose" aria-label="Close">×</button><div id="dmBody"></div></div>';
+    document.body.appendChild(overlay); body=overlay.querySelector('#dmBody');
+    overlay.addEventListener('click',function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#dmClose').addEventListener('click',closeModal);
+    document.addEventListener('keydown',function(e){ if(overlay.hidden) return; if(e.key==='Escape') closeModal(); else if(e.key==='Tab') trap(e); });
+  }
+  function trap(e){ var f=overlay.querySelectorAll('a[href],button'); if(!f.length) return; var a=f[0], b=f[f.length-1];
+    if(e.shiftKey && document.activeElement===a){ b.focus(); e.preventDefault(); } else if(!e.shiftKey && document.activeElement===b){ a.focus(); e.preventDefault(); } }
+  function openModal(kind){ ensure(); render(kind); overlay.hidden=false; lastFocus=document.activeElement; overlay.querySelector('#dmClose').focus(); }
+  function closeModal(){ if(overlay){ overlay.hidden=true; if(lastFocus&&lastFocus.focus) lastFocus.focus(); } }
+
+  function guideHTML(g,eyebrow){
+    return '<div class="dm-eyebrow">'+eyebrow+'</div><div class="dm-title">'+g.title+'</div>'+keepLine()+
+      (g.link?linkBtn(g.link,g.linkLabel):'')+stepsHTML(g.steps)+shot(eyebrow.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+
+      '<div class="dm-expect">'+g.expect+'</div><div class="dm-formats">'+g.formats+'</div>'+privLine();
+  }
+  function render(kind){
+    if(kind==='dna'){
+      body.innerHTML='<div class="dm-toggle"><button data-p="23andMe">23andMe</button><button data-p="Ancestry.com">Ancestry</button></div><div id="dmDna"></div>';
+      var g=body.querySelector('#dmDna');
+      function paint(){ body.querySelectorAll('.dm-toggle button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-p')===provider); });
+        g.innerHTML=guideHTML(DNA[provider], provider==='23andMe'?'DNA · 23andMe':'DNA · Ancestry'); }
+      body.querySelectorAll('.dm-toggle button').forEach(function(b){ b.addEventListener('click',function(){ provider=b.getAttribute('data-p'); paint(); }); });
+      paint();
+    } else if(kind==='apple'){ body.innerHTML=guideHTML(APPLE,'Apple Health');
+    } else if(kind==='oura'){ body.innerHTML='<div class="dm-eyebrow">Oura</div><div class="dm-title">You’re ready — no file needed</div>'+privLine().replace(PRIV,OURA);
+    } else {
+      body.innerHTML='<div class="dm-eyebrow">Don’t have your data yet?</div><div class="dm-title">Where’s your data?</div><div class="dm-choose">'+
+        '<button data-k="dna" data-p="23andMe">23andMe — get your DNA file</button>'+
+        '<button data-k="dna" data-p="Ancestry.com">Ancestry — get your DNA file</button>'+
+        '<button data-k="apple">Apple Health — export your data</button>'+
+        '<button data-k="oura">Oura — no download needed</button></div>';
+      body.querySelectorAll('.dm-choose button').forEach(function(b){ b.addEventListener('click',function(){
+        var k=b.getAttribute('data-k'); if(k==='dna'){ provider=b.getAttribute('data-p'); render('dna'); } else render(k); }); });
+    }
+  }
+
+  function updateDataHelp(){
+    var el=document.getElementById('dataHelp'); if(!el) return; var s=window.selectedSource||null;
+    if(s==='Oura Ring'){ el.innerHTML='<div class="dh-note"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none"><path d="M20 6L9 17l-5-5"/></svg><span>Oura needs no download — just tap Connect and you’re straight to your artwork.</span></div>'; return; }
+    var label, kind;
+    if(s==='23andMe'||s==='Ancestry.com'){ label='Need your DNA file?'; kind='dna'; }
+    else if(s==='Apple Health'){ label='Need your Health export?'; kind='apple'; }
+    else { label='Don’t have your data yet?'; kind='chooser'; }
+    el.innerHTML='<button class="dh-btn" type="button">'+label+' →</button>';
+    el.querySelector('button').addEventListener('click',function(){ if(kind==='dna') provider=(s==='Ancestry.com')?'Ancestry.com':'23andMe'; openModal(kind); });
+  }
+  window.updateDataHelp=updateDataHelp;
+
+  /* ---- DNA .zip -> .txt auto-extract (client-side; uses built-in DecompressionStream, no dependency) ---- */
+  function u16(d,o){return d.getUint16(o,true);} function u32(d,o){return d.getUint32(o,true);}
+  function parseZip(buf){
+    var d=new DataView(buf.buffer,buf.byteOffset,buf.byteLength), i=buf.length-22;
+    for(; i>=0; i--){ if(u32(d,i)===0x06054b50) break; }
+    if(i<0) throw new Error('Not a valid .zip');
+    var count=u16(d,i+10), p=u32(d,i+16), out=[];
+    for(var n=0;n<count && p+46<=buf.length;n++){ if(u32(d,p)!==0x02014b50) break;
+      var method=u16(d,p+10), comp=u32(d,p+20), unc=u32(d,p+24), fnl=u16(d,p+28), exl=u16(d,p+30), cml=u16(d,p+32), lo=u32(d,p+42);
+      out.push({name:new TextDecoder().decode(buf.subarray(p+46,p+46+fnl)), method:method, comp:comp, size:unc, lo:lo});
+      p=p+46+fnl+exl+cml; }
+    return out;
+  }
+  async function inflate(buf,e){
+    var d=new DataView(buf.buffer,buf.byteOffset,buf.byteLength), fnl=u16(d,e.lo+26), exl=u16(d,e.lo+28), start=e.lo+30+fnl+exl, data=buf.subarray(start,start+e.comp);
+    if(e.method===0) return data;
+    if(e.method===8){ var s=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return new Uint8Array(await new Response(s).arrayBuffer()); }
+    throw new Error('Unsupported zip compression method '+e.method);
+  }
+  async function extractDnaFile(file){
+    var buf=new Uint8Array(await file.arrayBuffer());
+    var isZip=buf.length>4 && buf[0]===0x50 && buf[1]===0x4b && buf[2]===0x03 && buf[3]===0x04;
+    if(!isZip) return file; // plain .txt/.csv (or unknown) — hand straight to the engine
+    if(typeof DecompressionStream==='undefined') throw new Error('This browser can’t open .zip here — please unzip and upload the .txt.');
+    var e=parseZip(buf).filter(function(x){ var n=x.name.toLowerCase(); return x.size>0 && !/(^|\/)__macosx\//.test(n) && !n.endsWith('/') && (n.endsWith('.txt')||n.endsWith('.csv')); }).sort(function(a,b){return b.size-a.size;})[0];
+    if(!e) throw new Error('No .txt or .csv found inside the .zip — please upload the raw data file.');
+    var text=new TextDecoder().decode(await inflate(buf,e));
+    return new File([text], e.name.split('/').pop(), {type:'text/plain'});
+  }
+  window.extractDnaFile=extractDnaFile;
+
+  /* TODO(phase 2): "email me the steps" capture — blocked on the email-sending setup. Do not build yet. */
+
+  if(document.readyState!=='loading') updateDataHelp(); else document.addEventListener('DOMContentLoaded', updateDataHelp);
 })();
 </script>
 </body>
