@@ -269,7 +269,7 @@
 <div class="trust"><div class="wrap row">
   <span class="dot"></span>
   <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-  <span><span class="key">Private by design</span> — your data never leaves your device · no uploads · no servers · no collection</span>
+  <span><span class="key">Private by design</span> — your raw data is never stored, never sold. DNA is processed in your browser; wearable data is processed in the moment and deleted.</span>
 </div></div>
 
 <section id="start"><div class="wrap">
@@ -307,7 +307,7 @@
           <input type="file" id="fileInput" hidden accept=".txt,.csv,.zip">
           <svg class="ico di" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
           <div class="dt" id="dropTitle">Choose your data file</div>
-          <div class="ds" id="dropSub">Read locally in your browser — never uploaded.</div>
+          <div class="ds" id="dropSub">Your raw data is never stored or sold.</div>
         </label>
         <button class="btn btn-primary" id="genBtn" onclick="doGenerate()" disabled>Generate my fractal
           <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -365,7 +365,7 @@
   <div class="head"><div class="eyebrow mint">How to use it</div><h2>Data to wall art in four steps.</h2></div>
   <div class="steps">
     <div class="stepc"><div class="n">STEP 01</div><h3>Export your data</h3><p>Download your raw file from 23andMe, Ancestry, Apple Health, or the Oura web portal.</p></div>
-    <div class="stepc"><div class="n">STEP 02</div><h3>Load it locally</h3><p>Select the file. It's read right in your browser — never uploaded or stored.</p></div>
+    <div class="stepc"><div class="n">STEP 02</div><h3>Processed privately</h3><p>Your raw data becomes art, then it's gone — never stored, never sold. DNA is processed right in your browser.</p></div>
     <div class="stepc"><div class="n">STEP 03</div><h3>Generate</h3><p>Your unique fractal renders in seconds. Adjust the palette if you like.</p></div>
     <div class="stepc"><div class="n">STEP 04</div><h3>Own it</h3><p>Download, order a print, or mint your NFT — or all three.</p></div>
   </div>
@@ -647,12 +647,13 @@ async function doGenerate(){
 <script>
 /* ===== Step-1 data-onboarding help (per STEP1-DATA-GUIDE.md). Content + tiny front-end; nothing leaves the browser. ===== */
 (function(){
-  var PRIV="Your file is read privately in your own browser to make your artwork — it's never uploaded or stored.";
+  var PRIV_DNA="Your DNA file is read and turned into art entirely in your browser — it is never uploaded.";
+  var PRIV_BIO="Your data is processed in the moment to create your artwork, then deleted immediately — never stored, never sold.";
   var KEEP="Keep this GenPi tab open — when your file is ready, come right back here and drop it in.";
   function shot(l){ return '<div class="dm-shot" data-slot="'+l+'">screenshot slot — '+l+'</div>'; }
   function stepsHTML(a){ return '<ol class="dm-steps"><li>'+a.join('</li><li>')+'</li></ol>'; }
   function linkBtn(u,l){ return '<a class="dm-link" href="'+u+'" target="_blank" rel="noopener">'+l+' ↗</a>'; }
-  function privLine(){ return '<div class="dm-privacy"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none;margin-top:2px"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>'+PRIV+'</span></div>'; }
+  function privLine(t){ return '<div class="dm-privacy"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none;margin-top:2px"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>'+(t||PRIV_DNA)+'</span></div>'; }
   function keepLine(){ return '<div class="dm-keep">'+KEEP+'</div>'; }
 
   var DNA={
@@ -669,7 +670,7 @@ async function doGenerate(){
     steps:['On your iPhone, open the <b>Health</b> app.','Tap your <b>profile picture</b> (top right).','Scroll down → <b>Export All Health Data</b>.','Wait for it to build <b>export.zip</b>, then <b>Save to Files</b> (or AirDrop to your computer).','Come back to this tab (same phone, or your computer) and upload the <b>export.zip</b>.'],
     expect:'This one’s done in the Health app on your iPhone — export, then upload the zip here. Best done on the phone you’re browsing from.',
     formats:'Accepted: export.zip from the Health app.' };
-  var OURA="Nothing to download. Tap Connect Oura, approve access, and your last few days of data flow straight into your browser to make your artwork. You’re ready — go ahead.";
+  var OURA="Nothing to download — just tap Connect Oura and approve access. Your Oura data is processed in the moment to create your artwork, then deleted immediately — never stored, never sold.";
 
   var overlay, body, lastFocus, provider='23andMe';
   function ensure(){
@@ -690,7 +691,7 @@ async function doGenerate(){
   function guideHTML(g,eyebrow){
     return '<div class="dm-eyebrow">'+eyebrow+'</div><div class="dm-title">'+g.title+'</div>'+keepLine()+
       (g.link?linkBtn(g.link,g.linkLabel):'')+stepsHTML(g.steps)+shot(eyebrow.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+
-      '<div class="dm-expect">'+g.expect+'</div><div class="dm-formats">'+g.formats+'</div>'+privLine();
+      '<div class="dm-expect">'+g.expect+'</div><div class="dm-formats">'+g.formats+'</div>'+privLine(/Apple/.test(eyebrow)?PRIV_BIO:PRIV_DNA);
   }
   function render(kind){
     if(kind==='dna'){
@@ -701,7 +702,7 @@ async function doGenerate(){
       body.querySelectorAll('.dm-toggle button').forEach(function(b){ b.addEventListener('click',function(){ provider=b.getAttribute('data-p'); paint(); }); });
       paint();
     } else if(kind==='apple'){ body.innerHTML=guideHTML(APPLE,'Apple Health');
-    } else if(kind==='oura'){ body.innerHTML='<div class="dm-eyebrow">Oura</div><div class="dm-title">You’re ready — no file needed</div>'+privLine().replace(PRIV,OURA);
+    } else if(kind==='oura'){ body.innerHTML='<div class="dm-eyebrow">Oura</div><div class="dm-title">You’re ready — no file needed</div>'+privLine(OURA);
     } else {
       body.innerHTML='<div class="dm-eyebrow">Don’t have your data yet?</div><div class="dm-title">Where’s your data?</div><div class="dm-choose">'+
         '<button data-k="dna" data-p="23andMe">23andMe — get your DNA file</button>'+
@@ -716,9 +717,9 @@ async function doGenerate(){
   function updateDataHelp(){
     var el=document.getElementById('dataHelp'); if(!el) return; var s=window.selectedSource||null;
     if(s==='Oura Ring'){ el.innerHTML='<div class="dh-note"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none"><path d="M20 6L9 17l-5-5"/></svg><span>Oura needs no download — just tap Connect and you’re straight to your artwork.</span></div>'; return; }
-    var label, kind;
-    if(s==='23andMe'||s==='Ancestry.com'){ label='Need your DNA file?'; kind='dna'; }
-    else if(s==='Apple Health'){ label='Need your Health export?'; kind='apple'; }
+    var label, kind, ds=document.getElementById('dropSub');
+    if(s==='23andMe'||s==='Ancestry.com'){ label='Need your DNA file?'; kind='dna'; if(ds) ds.textContent='Read in your browser — never uploaded.'; }
+    else if(s==='Apple Health'){ label='Need your Health export?'; kind='apple'; if(ds) ds.textContent='Uploaded over HTTPS, processed in the moment, then deleted — never stored, never sold.'; }
     else { label='Don’t have your data yet?'; kind='chooser'; }
     el.innerHTML='<button class="dh-btn" type="button">'+label+' →</button>';
     el.querySelector('button').addEventListener('click',function(){ if(kind==='dna') provider=(s==='Ancestry.com')?'Ancestry.com':'23andMe'; openModal(kind); });

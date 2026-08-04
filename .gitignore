@@ -26,6 +26,7 @@ CODE-STREAMLINE-BRIEF.md
 # Pyodide engine port — internal working dirs (never public)
 Files from Nahuel/
 pyodide-port/
+biodata-service/
 
 # Other internal docs (never public)
 NAHUEL-HANDOFF-MESSAGE.md
@@ -33,6 +34,8 @@ PRIVACY-COPY-FALLBACK.md
 PYODIDE-PORT-BRIEF.md
 WALLET-CHOICE-SPEC.md
 STEP1-DATA-GUIDE.md
+OURA-SERVER-AND-COPY-BRIEF.md
+STRIPE-PAYMENT-LINKS.md
 
 # Secrets — NEVER commit (Stripe keys, etc.)
 .env
