@@ -498,7 +498,7 @@ function drawPrintRender(dataUrl){
       8×10 (4:5) → 4320×5400 (540 off each side)
    A single centred crop-to-aspect produces all four of those exactly.
 ======================================================== */
-var PRINT_SPECS={ print:{label:'8×10 in', aspect:4/5}, collector:{label:'12×18 in', aspect:2/3} };
+var PRINT_SPECS={ print:{label:'8×10 in', aspect:4/5, ar:'4:5'}, collector:{label:'12×18 in', aspect:2/3, ar:'2:3'} };
 function loadImage(src){
   return new Promise(function(res,rej){
     var i=new Image();
@@ -515,15 +515,23 @@ function cropToAspect(img,aspect){
   c.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cw,ch);
   return c;
 }
-/* Produces the print-ready asset for a tier from the master. Called by the fulfilment step
-   (post-payment), not on generate — the master is what gets uploaded at buy-click. */
-async function makePrintAsset(masterDataUrl,tier){
-  var spec=PRINT_SPECS[tier];
-  if(!spec) return null;                               // digital tier ships the full master
-  var c=cropToAspect(await loadImage(masterDataUrl),spec.aspect);
-  return { dataUrl:c.toDataURL('image/png'), width:c.width, height:c.height, size:spec.label };
+/* Delivery uses Cloudinary URL transformations off the SINGLE stored master — one upload
+   per order, no extra assets. `q_98:444` pins quality 98 with NO chroma subsampling;
+   `c_crop,g_center` reproduces cropToAspect above exactly. cropToAspect stays as the
+   reference implementation those transformations were verified against.
+
+   Verified live end-to-end against a real 3600×5400 master:
+     master  q_98:444            -> 3600×5400, 4.46 MB, sampling 1x1 1x1 1x1 (4:4:4)
+     8×10    ar_4:5,c_crop       -> 3600×4500, 3.98 MB, 4:4:4
+     12×18   ar_2:3,c_crop       -> 3600×5400, 4.46 MB, 4:4:4                        */
+var CLOUDINARY_JPEG='q_98:444,f_jpg';
+function printUrl(publicId,tier){
+  if(!publicId) return null;
+  var spec=PRINT_SPECS[tier];                          // no spec = digital, the uncropped master
+  var tx=(spec?('ar_'+spec.ar+',c_crop,g_center,'):'')+CLOUDINARY_JPEG;
+  return 'https://res.cloudinary.com/'+CLOUDINARY_CLOUD+'/image/upload/'+tx+'/'+publicId+'.jpg';
 }
-window.GenPiPrint={ specs:PRINT_SPECS, cropToAspect:cropToAspect, makePrintAsset:makePrintAsset };
+window.GenPiPrint={ specs:PRINT_SPECS, cropToAspect:cropToAspect, printUrl:printUrl };
 /* ---- checkout + print-order config (fill these once the accounts exist) ---- */
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
@@ -538,6 +546,30 @@ async function uploadArtwork(dataUrl){
     if(!r.ok) return null; var j=await r.json(); return {url:j.secure_url, publicId:j.public_id};
   }catch(e){ return null; }
 }
+/* What we STORE is a lossless master; what we DELIVER is JPEG 4:4:4 built by Cloudinary
+   (see printUrl). Two different inputs arrive here:
+     Biodata — already JPEG q98 4:4:4 from the service, small enough to store as-is.
+     DNA     — generated in-browser as a 13.5 MB PNG, over Cloudinary's 10 MB cap. The
+               browser's own JPEG encoder is not an option: it applies 4:2:0 at EVERY
+               quality including 0.98 (measured: sampling 2x2, PSNR 47.8 dB, max pixel
+               error 23/255 vs 6/255 for 4:4:4). So we re-encode to LOSSLESS WebP —
+               verified byte-identical across all 19,440,000 pixels, 9.2 MB — and let
+               Cloudinary produce the 4:4:4 JPEG from it. No chroma is ever thrown away. */
+var CLOUDINARY_MAX_BYTES=10*1024*1024;
+async function prepareMasterForUpload(result){
+  var master=(typeof result==='string')?result:(result&&(result.finalPng||result.dataUrl||result.imageUrl));
+  if(!master) return null;
+  var out=master;
+  if(master.indexOf('data:image/jpeg')!==0){
+    var img=await loadImage(master);
+    var c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+    c.getContext('2d').drawImage(img,0,0);
+    var webp=c.toDataURL('image/webp',1.0);
+    if(webp.indexOf('data:image/webp')===0) out=webp;   // fall back to the PNG if unsupported
+  }
+  var bytes=Math.round((out.length-out.indexOf(',')-1)*0.75);
+  return bytes>CLOUDINARY_MAX_BYTES ? {tooLarge:true,bytes:bytes} : {dataUrl:out,bytes:bytes};
+}
 // The artwork exists ONLY in this tab — we deliberately store no source data, so it cannot be
 // regenerated later. Checkout navigates away to Stripe, which destroys it. So the finished PNG
 // must be uploaded BEFORE the redirect, and its publicId carried into client_reference_id, or
@@ -549,11 +581,12 @@ async function buyTier(tier){
   if(!r){ alert('Generate your fractal first.'); return; }
   var cb=document.getElementById('checkoutBtn'), label=cb?cb.textContent:'';
   if(!r.publicId){
-    var art=(typeof r==='string')?r:(r.finalPng||r.dataUrl||r.imageUrl);
-    if(!art){ alert('Generate your fractal first.'); return; }
     if(cb){ cb.disabled=true; cb.textContent='Preparing your artwork…'; }
-    var h=await uploadArtwork(art);
+    var prep=await prepareMasterForUpload(r);
+    var h=(prep&&!prep.tooLarge)?await uploadArtwork(prep.dataUrl):null;
     if(cb){ cb.disabled=false; cb.textContent=label; }
+    if(!prep){ alert('Generate your fractal first.'); return; }
+    if(prep.tooLarge){ alert("Your artwork came out larger than our image host accepts — nothing has been charged. Please email genepiart@gmail.com and we'll sort it out."); return; }
     if(!h){ alert("We couldn't prepare your artwork for checkout — nothing has been charged. Please try again."); return; }
     r.hostedUrl=h.url; r.publicId=h.publicId;
   }
