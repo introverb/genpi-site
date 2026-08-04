@@ -301,8 +301,20 @@
 
     <div class="reveal" id="genReveal">
       <div class="divider"></div>
-      <div class="steplab"><b>03</b> &nbsp;Upload your file &amp; generate</div>
+      <div class="steplab" id="step3lab"><b>03</b> &nbsp;Upload your file &amp; generate</div>
       <div class="gen">
+        <div id="winPick" style="display:none;margin-bottom:18px">
+          <div class="dh-note" style="margin-bottom:12px"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg><span>Choose the 2–5 day window your artwork is made from. One window = one image.</span></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Start date
+              <input type="date" id="winStart" oninput="validateWindow()" style="padding:10px 12px;border-radius:10px;border:1px solid var(--hair2);background:rgba(255,255,255,.04);color:var(--text);font:inherit;color-scheme:dark"></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">End date
+              <input type="date" id="winEnd" oninput="validateWindow()" style="padding:10px 12px;border-radius:10px;border:1px solid var(--hair2);background:rgba(255,255,255,.04);color:var(--text);font:inherit;color-scheme:dark"></label>
+          </div>
+          <div class="gnote" id="winNote" style="margin-top:8px"></div>
+        </div>
+        <button class="btn btn-primary" id="ouraBtn" style="display:none;margin-bottom:14px" onclick="connectOura()">Connect Oura
+          <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <label class="drop" id="drop">
           <input type="file" id="fileInput" hidden accept=".txt,.csv,.zip">
           <svg class="ico di" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
@@ -424,6 +436,7 @@ function pickSrc(el){
   el.classList.add('sel');
   selectedSource=el.querySelector('.t')?el.querySelector('.t').textContent:'';
   if(window.updateDataHelp) updateDataHelp();
+  if(window.syncStepUI) syncStepUI();
   document.getElementById('genReveal').classList.add('open');
   document.getElementById('pkgReveal').classList.remove('open');
   setTimeout(()=>document.getElementById('genReveal').scrollIntoView({behavior:'smooth',block:'nearest'}),200);
@@ -475,8 +488,8 @@ function drawPrintRender(dataUrl){
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
 var PAYMENT_LINKS={ digital:"", print:"", collector:"" };  // Stripe Payment Link URLs
-// NOTE: uploadArtwork is intentionally NOT called on generate (see TODO in doGenerate).
-// Wire it only after payment/order authorization (OLLI-INTEGRATION.md §3), with the Stripe→Make flow.
+// NOTE: uploadArtwork is NOT called on generate. It is called at BUY-CLICK, inside buyTier(),
+// immediately before the redirect to Stripe — see the comment there for why that timing matters.
 async function uploadArtwork(dataUrl){
   if(!CLOUDINARY_CLOUD||!CLOUDINARY_PRESET||!dataUrl) return null;
   try{
@@ -485,21 +498,38 @@ async function uploadArtwork(dataUrl){
     if(!r.ok) return null; var j=await r.json(); return {url:j.secure_url, publicId:j.public_id};
   }catch(e){ return null; }
 }
-function buyTier(tier){
+// The artwork exists ONLY in this tab — we deliberately store no source data, so it cannot be
+// regenerated later. Checkout navigates away to Stripe, which destroys it. So the finished PNG
+// must be uploaded BEFORE the redirect, and its publicId carried into client_reference_id, or
+// the paid order arrives with no image to print/mint. Fails closed: no upload, no checkout.
+async function buyTier(tier){
   var link=PAYMENT_LINKS[tier];
   if(!link){ alert('Checkout is being set up — hang tight!'); return; }
-  var r=window.__genpiResult, ref=(r&&r.publicId)?(r.publicId+'__'+tier):'';
-  var url=link+(ref?((link.indexOf('?')>-1?'&':'?')+'client_reference_id='+encodeURIComponent(ref)):'');
+  var r=window.__genpiResult;
+  if(!r){ alert('Generate your fractal first.'); return; }
+  var cb=document.getElementById('checkoutBtn'), label=cb?cb.textContent:'';
+  if(!r.publicId){
+    var art=(typeof r==='string')?r:(r.finalPng||r.dataUrl||r.imageUrl);
+    if(!art){ alert('Generate your fractal first.'); return; }
+    if(cb){ cb.disabled=true; cb.textContent='Preparing your artwork…'; }
+    var h=await uploadArtwork(art);
+    if(cb){ cb.disabled=false; cb.textContent=label; }
+    if(!h){ alert("We couldn't prepare your artwork for checkout — nothing has been charged. Please try again."); return; }
+    r.hostedUrl=h.url; r.publicId=h.publicId;
+  }
+  var ref=r.publicId+'__'+tier;
+  var url=link+((link.indexOf('?')>-1?'&':'?')+'client_reference_id='+encodeURIComponent(ref));
   window.location.href=url;
 }
 (function(){
   var fi=document.getElementById('fileInput');
   if(!fi) return;
   fi.addEventListener('change',function(){
-    var f=fi.files[0]; var btn=document.getElementById('genBtn');
+    var f=fi.files[0];
     if(f){ document.getElementById('dropTitle').textContent=f.name;
-      document.getElementById('dropSub').textContent=(f.size/1048576).toFixed(1)+' MB · read locally';
-      document.getElementById('drop').classList.add('has'); btn.disabled=false; }
+      document.getElementById('dropSub').textContent=(f.size/1048576).toFixed(1)+' MB · '+(isBio(selectedSource)?'sent securely, then deleted':'read locally');
+      document.getElementById('drop').classList.add('has'); }
+    syncGenEnabled();
   });
 })();
 function renderFractalTo(cv,scale,C){
@@ -517,14 +547,148 @@ function renderFractalTo(cv,scale,C){
     }}
   ctx.putImageData(img,0,0);
 }
-async function fallbackGenerate(file, source){
-  var buf=new Uint8Array(await file.arrayBuffer());
-  var hh=2166136261, step=Math.max(1,Math.floor(buf.length/4096));
-  for(var i=0;i<buf.length;i+=step){hh=((hh^buf[i])*16777619)>>>0;}
-  var off=document.createElement('canvas'); off.width=480; off.height=720;
-  var C={x:-0.8+((hh%1000)/1000-0.5)*0.34, y:0.156+(((hh>>>10)%1000)/1000-0.5)*0.22};
-  renderFractalTo(off,3.0,C);
-  return {dataUrl:off.toDataURL('image/png'), seedHash:('00000000'+hh.toString(16)).slice(-8), source:source};
+/* ===================== BIODATA (Apple Health / Oura) =====================
+   These sources can't be processed in the browser, so they go to the GenPi biodata
+   service over HTTPS, are used in the moment, and are deleted. DNA never comes here.
+   There is deliberately NO placeholder/fallback generator: if the service can't be
+   reached we fail honestly, because nobody should be able to buy a stand-in image
+   believing it came from their own data.
+========================================================================== */
+var BIODATA_SERVICE="https://genpi-biodata-service.onrender.com";
+var OURA_CLIENT_ID="05c01ed2-e45f-4373-86eb-74c8fc0dde9a";
+var OURA_SCOPES="daily heartrate spo2";
+var ouraToken=null;
+
+function isBio(s){ return s==='Apple Health'||s==='Oura Ring'; }
+function pad2(n){ return (n<10?'0':'')+n; }
+function isoDay(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function localTZ(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'; }catch(e){ return 'UTC'; } }
+
+function readWindow(){
+  var a=document.getElementById('winStart'), b=document.getElementById('winEnd');
+  if(!a||!b||!a.value||!b.value) return null;
+  var ds=new Date(a.value+'T00:00:00'), de=new Date(b.value+'T00:00:00');
+  if(isNaN(ds.getTime())||isNaN(de.getTime())) return null;
+  return {start:a.value, end:b.value, days:Math.round((de-ds)/86400000)+1};
+}
+function validateWindow(){
+  var w=readWindow(), note=document.getElementById('winNote'), ok=!!(w&&w.days>=2&&w.days<=5);
+  if(note){
+    if(!w) note.textContent='Pick a start and end date.';
+    else if(w.days<2) note.textContent='That window is too short — choose 2 to 5 days.';
+    else if(w.days>5) note.textContent='That window is too long — choose 2 to 5 days.';
+    else note.textContent=w.days+'-day window selected.';
+  }
+  syncGenEnabled();
+  return ok;
+}
+function defaultWindow(){
+  var a=document.getElementById('winStart'), b=document.getElementById('winEnd');
+  if(!a||!b||a.value||b.value) return;
+  var end=new Date(); end.setDate(end.getDate()-1);
+  var start=new Date(end.getTime()-4*86400000);
+  a.value=isoDay(start); b.value=isoDay(end); a.max=isoDay(new Date()); b.max=isoDay(new Date());
+}
+function syncGenEnabled(){
+  var btn=document.getElementById('genBtn'); if(!btn) return;
+  var f=document.getElementById('fileInput'), hasFile=!!(f&&f.files&&f.files[0]);
+  var w=readWindow(), winOk=!!(w&&w.days>=2&&w.days<=5);
+  if(selectedSource==='Oura Ring') btn.disabled=!(ouraToken&&winOk);
+  else if(selectedSource==='Apple Health') btn.disabled=!(hasFile&&winOk);
+  else btn.disabled=!hasFile;
+}
+function syncStepUI(){
+  var oura=(selectedSource==='Oura Ring'), bio=isBio(selectedSource);
+  var wp=document.getElementById('winPick'), ob=document.getElementById('ouraBtn');
+  var dr=document.getElementById('drop'), lab=document.getElementById('step3lab');
+  if(wp) wp.style.display=bio?'block':'none';
+  if(ob){ ob.style.display=oura?'inline-flex':'none';
+    ob.textContent=ouraToken?'Oura connected ✓':'Connect Oura'; ob.disabled=!!ouraToken; }
+  if(dr) dr.style.display=oura?'none':'';
+  if(lab) lab.innerHTML='<b>03</b> &nbsp;'+(oura?'Connect Oura &amp; generate':'Upload your file &amp; generate');
+  if(bio){ defaultWindow(); validateWindow(); }
+  syncGenEnabled();
+}
+window.syncStepUI=syncStepUI;
+
+/* Oura OAuth (implicit). We redirect to oura-callback.html — the URI already whitelisted on the
+   Oura app — which hands the token back via sessionStorage and returns here. Token lives in a
+   variable for this tab only; it is never persisted and never logged. */
+function connectOura(){
+  var s=new Uint8Array(16); crypto.getRandomValues(s);
+  var state=Array.from(s,function(x){return x.toString(16).padStart(2,'0');}).join('');
+  try{
+    sessionStorage.setItem('genpi_oura_state',state);
+    sessionStorage.setItem('genpi_oura_return',location.pathname+location.search);
+  }catch(e){ alert('Your browser is blocking session storage, which Oura sign-in needs.'); return; }
+  var u=new URL('https://cloud.ouraring.com/oauth/authorize');
+  u.searchParams.set('response_type','token');
+  u.searchParams.set('client_id',OURA_CLIENT_ID);
+  u.searchParams.set('redirect_uri',new URL('oura-callback.html',location.href).href);
+  u.searchParams.set('scope',OURA_SCOPES);
+  u.searchParams.set('state',state);
+  location.href=u.toString();
+}
+(function(){
+  var t=null;
+  try{ t=sessionStorage.getItem('genpi_oura_token'); if(t) sessionStorage.removeItem('genpi_oura_token'); }catch(e){}
+  if(!t) return;
+  ouraToken=t;
+  window.addEventListener('load',function(){
+    var bio=document.getElementById('cat-bio');
+    if(bio) bio.click();
+    var row=document.getElementById('srcRow');
+    if(row) Array.prototype.forEach.call(row.querySelectorAll('.opt'),function(o){
+      var n=o.querySelector('.t'); if(n&&n.textContent==='Oura Ring') o.click();
+    });
+    var st=document.getElementById('genStatus');
+    if(st) st.textContent='Oura connected. Choose your window, then generate.';
+  });
+})();
+
+/* Render's free tier sleeps after 15 min idle, so the first call can take ~50s before the
+   engine even starts. No client timeout — we let it run and keep the user informed. */
+function startBioProgress(st){
+  var t0=Date.now();
+  function tick(){
+    var s=Math.round((Date.now()-t0)/1000);
+    if(s<8) st.textContent='Sending your data securely…';
+    else if(s<60) st.textContent='Waking the generator — the first run after a quiet spell takes about a minute… ('+s+'s)';
+    else st.textContent='Creating your artwork — this can take a couple of minutes. Please keep this tab open. ('+s+'s)';
+  }
+  tick();
+  var timer=setInterval(tick,1000);
+  return function(){ clearInterval(timer); };
+}
+async function generateBiodata(source,file){
+  var w=readWindow(), tz=localTZ(), r;
+  if(source==='Oura Ring'){
+    r=await fetch(BIODATA_SERVICE+'/api/genpi/oura/generate',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({access_token:ouraToken,window_start:w.start,window_end:w.end,window_timezone:tz})});
+  } else {
+    var fd=new FormData();
+    fd.append('file',file); fd.append('window_start',w.start);
+    fd.append('window_end',w.end); fd.append('window_timezone',tz);
+    r=await fetch(BIODATA_SERVICE+'/api/genpi/wearable/generate',{method:'POST',body:fd});
+  }
+  if(!r.ok){
+    var detail='';
+    try{ var j=await r.json(); detail=(j&&j.detail)||''; }catch(e){}
+    var err=new Error(detail); err.status=r.status; throw err;
+  }
+  var out=await r.json();
+  return {dataUrl:out.previewPngDataUrl, finalPng:out.finalPng,
+          manifestJson:out.manifestJson, seedHash:out.seedHash, source:source};
+}
+function bioErrorText(e){
+  var m=(e&&e.message)||'', code=e&&e.status;
+  if(code===413) return 'That file is over the 150 MB limit. Export a shorter date range from Health and try again.';
+  if(code===401||code===403) return 'Your Oura connection expired. Tap Connect Oura again.';
+  if(code===422||/no .*data|date range|different window/i.test(m)) return m||'No data found in that date range. Try a different window.';
+  if(code===502) return "We couldn't reach Oura for your data. Please try again in a moment.";
+  if(!code) return "We couldn't reach the generator. Check your connection and try again.";
+  return (m||'Something went wrong creating your artwork.')+' Please try again.';
 }
 function showResult(dataUrl){
   var wrap=document.getElementById('previewWrap'), cv=document.getElementById('previewCanvas');
@@ -532,25 +696,32 @@ function showResult(dataUrl){
   wrap.style.display='flex';
 }
 async function doGenerate(){
-  var f=document.getElementById('fileInput').files[0]; if(!f) return;
+  var src=selectedSource, dna=(src==='23andMe'||src==='Ancestry.com');
+  var f=document.getElementById('fileInput').files[0];
   var st=document.getElementById('genStatus'), btn=document.getElementById('genBtn');
-  st.textContent='Generating locally…'; btn.disabled=true;
-  var res;
+  if(isBio(src)&&!validateWindow()){ st.textContent='Choose a 2–5 day window first.'; return; }
+  if(src==='Oura Ring'){ if(!ouraToken){ st.textContent='Connect Oura first.'; return; } }
+  else if(!f) return;
+  btn.disabled=true;
+  var res, stopProgress=null;
   try{
-    if(selectedSource==='23andMe' || selectedSource==='Ancestry.com'){ var dnaFile=await extractDnaFile(f); res=await window.GenPiDNA.generate(dnaFile, selectedSource); }
-    else if(window.GenPi && typeof window.GenPi.generate==='function'){ res=await window.GenPi.generate(f, selectedSource); }
-    else { res=await fallbackGenerate(f, selectedSource); }
-  }catch(e){ st.textContent='Generation failed: '+((e&&e.message)||e); btn.disabled=false; return; }
+    if(dna){ st.textContent='Generating locally…'; var dnaFile=await extractDnaFile(f); res=await window.GenPiDNA.generate(dnaFile, src); }
+    else { stopProgress=startBioProgress(st); res=await generateBiodata(src, f); }
+  }catch(e){
+    if(stopProgress) stopProgress();
+    st.textContent=dna?('Generation failed: '+((e&&e.message)||e)):bioErrorText(e);
+    btn.disabled=false; return;
+  }
+  if(stopProgress) stopProgress();
   var url=(typeof res==='string')?res:(res&&(res.dataUrl||res.imageUrl));
   if(url){ showResult(url); drawPrintRender(url); }
   window.__genpiResult=res;
-  // TODO(post-payment upload): the finished PNG must upload to Cloudinary ONLY after payment /
-  //   order authorization (OLLI-INTEGRATION.md §3), to be built WITH the Stripe→Make payment
-  //   wiring. Disabled on-generate for now for ALL sources — the on-site preview uses the local
-  //   dataUrl and needs no upload; leaving this on would push DNA-derived artwork pre-payment.
-  //   Do NOT re-enable on generate.
-  // if(url) uploadArtwork(url).then(function(h){ if(h&&window.__genpiResult){ window.__genpiResult.hostedUrl=h.url; window.__genpiResult.publicId=h.publicId; } });
-  st.textContent='Done — generated on your device. Now choose how to own it.'; btn.disabled=false;
+  // The finished PNG is uploaded at BUY-CLICK (see buyTier), never on generate — so nothing
+  // leaves the browser unless the visitor actually chooses to buy.
+  st.textContent=dna
+    ? 'Done — generated on your device. Now choose how to own it.'
+    : 'Done — created from your data, which has now been deleted. Now choose how to own it.';
+  btn.disabled=false;
   var pk=document.getElementById('pkgReveal'); pk.classList.add('open');
   setTimeout(function(){pk.scrollIntoView({behavior:'smooth',block:'nearest'});},220);
 }

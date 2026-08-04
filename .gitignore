@@ -36,6 +36,10 @@ WALLET-CHOICE-SPEC.md
 STEP1-DATA-GUIDE.md
 OURA-SERVER-AND-COPY-BRIEF.md
 STRIPE-PAYMENT-LINKS.md
+HANDOFF.md
+
+# Belt-and-suspenders: all root markdown is internal (the public site is HTML) — future-proofs new docs
+*.md
 
 # Secrets — NEVER commit (Stripe keys, etc.)
 .env

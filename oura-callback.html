@@ -35,6 +35,26 @@ const API_BASE = "https://api.ouraring.com/v2/usercollection";
 let accessToken = null;
 let currentBundle = null;
 
+// GenPi production hand-off. This page's URL is the redirect URI whitelisted on the Oura app,
+// so the main site sends users through here. If the main site started the flow, pass the token
+// back to it via sessionStorage (same-origin, read-once) and return the user. Below this point
+// the page behaves as the original standalone reference connector.
+(function () {
+  const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const tok = h.get("access_token");
+  let want = null;
+  try { want = sessionStorage.getItem("genpi_oura_state"); } catch (e) { return; }
+  if (!tok || !want) return;
+  try {
+    sessionStorage.removeItem("genpi_oura_state");
+    if (h.get("state") !== want) return;   // state mismatch — drop the token, do not hand it back
+    sessionStorage.setItem("genpi_oura_token", tok);
+    const back = sessionStorage.getItem("genpi_oura_return") || "./";
+    sessionStorage.removeItem("genpi_oura_return");
+    location.replace(back);
+  } catch (e) {}
+})();
+
 function log(obj) {
   document.getElementById("log").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
 }
