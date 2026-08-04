@@ -345,6 +345,7 @@
           <ul><li>Museum-grade archival print</li><li>Large 12 × 18 in format</li><li>Numbered Certificate of Authenticity</li></ul>
           <button class="btn btn-ghost" onclick="selectTier('collector',this)">Go collector</button></div>
       </div>
+      <div class="gnote" style="margin-top:14px">Prints are cropped from your master to fit standard framing sizes.</div>
       <button class="btn btn-primary" id="checkoutBtn" style="display:none;margin-top:24px" onclick="buyTier(window.selectedTier)">Continue to checkout</button>
     </div>
   </div>
@@ -484,6 +485,45 @@ function drawPrintRender(dataUrl){
     }; art.src=dataUrl;
   }; frame.src=FRAME_IMG;
 }
+/* ===================== PRINT CROPS =====================
+   The canonical artwork is the FULL master — that is what the digital PNG and the NFT/IPFS
+   preview show. Prints are centre-crops taken from it to fit standard framing sizes. Aspect
+   ratios are never changed, and the master is never upscaled.
+
+   DNA master 3600×5400 (2:3):
+     12×18 (2:3) → no crop, the full master
+      8×10 (4:5) → 3600×4500, removing 450 from top and bottom (Nahuel's documented safe zone)
+   Biodata master 5400×5400 (square):
+     12×18 (2:3) → 3600×5400 (900 off each side) — exactly 300 dpi, and identical to the DNA master
+      8×10 (4:5) → 4320×5400 (540 off each side)
+   A single centred crop-to-aspect produces all four of those exactly.
+======================================================== */
+var PRINT_SPECS={ print:{label:'8×10 in', aspect:4/5}, collector:{label:'12×18 in', aspect:2/3} };
+function loadImage(src){
+  return new Promise(function(res,rej){
+    var i=new Image();
+    i.onload=function(){res(i);}; i.onerror=function(){rej(new Error('Could not read the artwork.'));};
+    i.src=src;
+  });
+}
+function cropToAspect(img,aspect){
+  var w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+  var cw=w, ch=Math.round(w/aspect);
+  if(ch>h){ ch=h; cw=Math.round(h*aspect); }          // master narrower than the target: crop height instead
+  var sx=Math.round((w-cw)/2), sy=Math.round((h-ch)/2);
+  var c=document.createElement('canvas'); c.width=cw; c.height=ch;
+  c.getContext('2d').drawImage(img,sx,sy,cw,ch,0,0,cw,ch);
+  return c;
+}
+/* Produces the print-ready asset for a tier from the master. Called by the fulfilment step
+   (post-payment), not on generate — the master is what gets uploaded at buy-click. */
+async function makePrintAsset(masterDataUrl,tier){
+  var spec=PRINT_SPECS[tier];
+  if(!spec) return null;                               // digital tier ships the full master
+  var c=cropToAspect(await loadImage(masterDataUrl),spec.aspect);
+  return { dataUrl:c.toDataURL('image/png'), width:c.width, height:c.height, size:spec.label };
+}
+window.GenPiPrint={ specs:PRINT_SPECS, cropToAspect:cropToAspect, makePrintAsset:makePrintAsset };
 /* ---- checkout + print-order config (fill these once the accounts exist) ---- */
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
