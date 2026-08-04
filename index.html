@@ -321,7 +321,7 @@
           <div class="dt" id="dropTitle">Choose your data file</div>
           <div class="ds" id="dropSub">Your raw data is never stored or sold.</div>
         </label>
-        <button class="btn btn-primary" id="genBtn" onclick="doGenerate()" disabled>Generate my fractal
+        <button class="btn btn-primary" id="genBtn" onclick="doGenerate()" disabled><span id="genBtnLabel">Generate my fractal</span>
           <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <div class="gnote" id="genStatus"></div>
         <div class="reveal-grid" id="previewWrap" style="display:none">
@@ -679,6 +679,9 @@ function syncStepUI(){
     ob.textContent=ouraToken?'Oura connected ✓':'Connect Oura'; ob.disabled=!!ouraToken; }
   if(dr) dr.style.display=oura?'none':'';
   if(lab) lab.innerHTML='<b>03</b> &nbsp;'+(oura?'Connect Oura &amp; generate':'Upload your file &amp; generate');
+  // Biodata makes emergent patterns, not fractals — Genetics keeps "fractal".
+  var gl=document.getElementById('genBtnLabel');
+  if(gl) gl.textContent='Generate my '+(bio?'pattern':'fractal');
   if(bio){ defaultWindow(); validateWindow(); }
   syncGenEnabled();
 }
