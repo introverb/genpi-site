@@ -264,7 +264,7 @@
     <div class="hero-copy">
       <div class="eyebrow">Generative biology · genpi.org</div>
       <h1>Your biology,<br>rendered as <em>art</em>.</h1>
-      <p class="lede">Turn your DNA or biometric data into a one-of-a-kind generative fractal — computed from the numbers that make you you, entirely on your own device.</p>
+      <p class="lede">Turn your DNA or biometric data into a one-of-a-kind generative artwork — computed from the numbers that make you you. DNA never leaves your browser; wearable data is used in the moment, then deleted.</p>
       <div class="btn-row">
         <a href="#how" class="btn btn-ghost">How it works</a>
       </div>
@@ -331,7 +331,7 @@
           <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <div class="gnote" id="genStatus"></div>
         <div class="reveal-grid" id="previewWrap" style="display:none">
-          <div class="prev-col art"><div class="prev-cap">Your fractal</div><canvas id="previewCanvas" width="480" height="720"></canvas></div>
+          <div class="prev-col art"><div class="prev-cap" id="prevCapArt">Your fractal</div><canvas id="previewCanvas" width="480" height="720"></canvas></div>
           <div class="prev-col room"><div class="prev-cap">As a print, on your wall</div><canvas id="renderCanvas"></canvas></div>
         </div>
       </div>
@@ -342,7 +342,7 @@
       <div class="steplab"><b>04</b> &nbsp;Choose how you'll own it</div>
       <div class="pkgs">
         <div class="pkg"><h3>Digital</h3><div class="price">$10</div>
-          <ul><li>One-edition NFT — provenance &amp; on-chain ownership</li><li>High-res PNG emailed to you</li><li>Personal-use license</li></ul>
+          <ul><li>One-edition NFT — provenance &amp; on-chain ownership</li><li>High-resolution image emailed to you</li><li>Personal-use license</li></ul>
           <button class="btn btn-ghost" onclick="selectTier('digital',this)">Get the file</button></div>
         <div class="pkg feat"><span class="badge">Popular</span><h3>Print</h3><div class="price">$40</div>
           <ul><li>Everything in Digital</li><li>Museum-grade archival print</li><li>8 × 10 in</li><li>Shipped to your door</li></ul>
@@ -374,7 +374,7 @@
       <h2>What is a fractal — and how does your data become one?</h2>
       <p>A fractal is a shape that repeats its own pattern at every scale: zoom in forever and new detail keeps unfolding. The Mandelbrot set is built by running numbers through one simple equation over and over, asking whether each point stays bounded or escapes to infinity.</p>
       <p>GenPi takes the numbers inside your data — the variants in your DNA, or the rhythms of your sleep, heart rate and activity — and maps them onto that equation's parameters: where to look, how deep to zoom, how many iterations to run, which colors to paint.</p>
-      <p>It all runs locally, in your browser. Because your data is unlike anyone else's, so is your fractal. The image beside this is generated live, right now, on your device.</p>
+      <p>Your DNA file is read and turned into art entirely in your browser. Because your data is unlike anyone else's, so is your artwork. The image beside this is generated live, right now, on your device.</p>
     </div>
     <div class="visual"><canvas id="fractal2"></canvas></div>
   </div>
@@ -383,9 +383,9 @@
 <section><div class="wrap">
   <div class="head"><div class="eyebrow mint">How to use it</div><h2>Data to wall art in four steps.</h2></div>
   <div class="steps">
-    <div class="stepc"><div class="n">STEP 01</div><h3>Export your data</h3><p>Download your raw file from 23andMe, Ancestry, Apple Health, or the Oura web portal.</p></div>
+    <div class="stepc"><div class="n">STEP 01</div><h3>Get your data</h3><p>Download your raw file from 23andMe, Ancestry or Apple Health. With Oura there's nothing to download — you just connect.</p></div>
     <div class="stepc"><div class="n">STEP 02</div><h3>Processed privately</h3><p>Your raw data becomes art, then it's gone — never stored, never sold. DNA is processed right in your browser.</p></div>
-    <div class="stepc"><div class="n">STEP 03</div><h3>Generate</h3><p>Your unique fractal renders in seconds. Adjust the palette if you like.</p></div>
+    <div class="stepc"><div class="n">STEP 03</div><h3>Generate</h3><p>Your unique artwork renders in seconds. Adjust the palette if you like.</p></div>
     <div class="stepc"><div class="n">STEP 04</div><h3>Own it</h3><p>Download, order a print, or mint your NFT — or all three.</p></div>
   </div>
 </div></section>
@@ -584,14 +584,14 @@ async function buyTier(tier){
   var link=PAYMENT_LINKS[tier];
   if(!link){ alert('Checkout is being set up — hang tight!'); return; }
   var r=window.__genpiResult;
-  if(!r){ alert('Generate your fractal first.'); return; }
+  if(!r){ alert('Generate your artwork first.'); return; }
   var cb=document.getElementById('checkoutBtn'), label=cb?cb.textContent:'';
   if(!r.publicId){
     if(cb){ cb.disabled=true; cb.textContent='Preparing your artwork…'; }
     var prep=await prepareMasterForUpload(r);
     var h=(prep&&!prep.tooLarge)?await uploadArtwork(prep.dataUrl):null;
     if(cb){ cb.disabled=false; cb.textContent=label; }
-    if(!prep){ alert('Generate your fractal first.'); return; }
+    if(!prep){ alert('Generate your artwork first.'); return; }
     if(prep.tooLarge){ alert("Your artwork came out larger than our image host accepts — nothing has been charged. Please email genepiart@gmail.com and we'll sort it out."); return; }
     if(!h){ alert("We couldn't prepare your artwork for checkout — nothing has been charged. Please try again."); return; }
     r.hostedUrl=h.url; r.publicId=h.publicId;
@@ -686,8 +686,11 @@ function syncStepUI(){
   if(dr) dr.style.display=oura?'none':'';
   if(lab) lab.innerHTML='<b>03</b> &nbsp;'+(oura?'Connect Oura &amp; generate':'Upload your file &amp; generate');
   // Biodata makes emergent patterns, not fractals — Genetics keeps "fractal".
+  var word=bio?'pattern':'fractal';
   var gl=document.getElementById('genBtnLabel');
-  if(gl) gl.textContent='Generate my '+(bio?'pattern':'fractal');
+  if(gl) gl.textContent='Generate my '+word;
+  var pc=document.getElementById('prevCapArt');
+  if(pc) pc.textContent='Your '+word;
   if(bio){ defaultWindow(); validateWindow(); }
   syncGenEnabled();
 }
@@ -774,7 +777,15 @@ function bioErrorText(e){
 }
 function showResult(dataUrl){
   var wrap=document.getElementById('previewWrap'), cv=document.getElementById('previewCanvas');
-  var im=new Image(); im.onload=function(){var ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(im,0,0,cv.width,cv.height);}; im.src=dataUrl;
+  // Letterbox rather than stretch. DNA masters are 2:3 and biodata masters are square,
+  // and drawing both to the fixed 480×720 frame squashed biodata — so customers were
+  // previewing a distorted version of what they'd be buying.
+  var im=new Image(); im.onload=function(){
+    var ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
+    var s=Math.min(cv.width/im.naturalWidth, cv.height/im.naturalHeight);
+    var w=im.naturalWidth*s, h=im.naturalHeight*s;
+    ctx.drawImage(im,(cv.width-w)/2,(cv.height-h)/2,w,h);
+  }; im.src=dataUrl;
   wrap.style.display='flex';
 }
 async function doGenerate(){
