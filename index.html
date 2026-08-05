@@ -352,7 +352,7 @@
           <button class="btn btn-ghost" onclick="selectTier('collector',this)">Go collector</button></div>
       </div>
       <div class="gnote" style="margin-top:14px">Prints are cropped from your master to fit standard framing sizes.</div>
-      <div class="gnote" style="margin-top:8px">Checkout is being set up — ordering isn't open just yet.</div>
+      <div class="gnote" style="margin-top:8px">Checkout is still in testing — payments aren't live yet, so a real card will be declined.</div>
       <button class="btn btn-primary" id="checkoutBtn" style="display:none;margin-top:24px" onclick="buyTier(window.selectedTier)">Continue to checkout</button>
     </div>
   </div>
@@ -542,15 +542,19 @@ window.GenPiPrint={ specs:PRINT_SPECS, cropToAspect:cropToAspect, printUrl:print
 /* ---- checkout + print-order config (fill these once the accounts exist) ---- */
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
-// UNWIRED ON PURPOSE — do not refill with the previous URLs.
-// The three links removed here carried no /test/ path segment, which is how a legacy
-// test-mode Payment Link is normally distinguished from a live one. Their mode could not be
-// confirmed from the URL alone, and an unfulfillable live checkout on a public site is a far
-// worse failure than a missing button, so they were pulled rather than left up.
-// Refill ONLY with the rebuilt sandbox links, and re-check the mode before pushing.
-// Note: the post-payment redirect to thankyou.html is set per-link in the Stripe dashboard,
-// not here — a Payment Link's success URL cannot be passed on the query string.
-var PAYMENT_LINKS={ digital:"", print:"", collector:"" };
+// SANDBOX LINKS ONLY. The discriminator is the `test_` prefix in the path — a sandbox link
+// is buy.stripe.com/test_XXXX, a live one is buy.stripe.com/XXXX with no prefix. The three
+// originals had no prefix and were LIVE: Stripe rejected a 4242 test card with "your request
+// was in live mode". Never wire a URL here without that prefix.
+// Digital and Collector are intentionally empty until their sandbox links are rebuilt;
+// buyTier() degrades to an honest "checkout is being set up" message for those.
+// The post-payment redirect to thankyou.html is set per-link in the Stripe dashboard, not
+// here — a Payment Link's success URL cannot be passed on the query string.
+var PAYMENT_LINKS={
+  digital:  "",
+  print:    "https://buy.stripe.com/test_bJefZhbqg2uLe8s7Bd3Je01",
+  collector:""
+};
 // NOTE: uploadArtwork is NOT called on generate. It is called at BUY-CLICK, inside buyTier(),
 // immediately before the redirect to Stripe — see the comment there for why that timing matters.
 async function uploadArtwork(dataUrl){
