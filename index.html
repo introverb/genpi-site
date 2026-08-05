@@ -352,6 +352,7 @@
           <button class="btn btn-ghost" onclick="selectTier('collector',this)">Go collector</button></div>
       </div>
       <div class="gnote" style="margin-top:14px">Prints are cropped from your master to fit standard framing sizes.</div>
+      <div class="gnote" style="margin-top:8px">Checkout is still in testing — payments aren't live yet, so a real card will be declined.</div>
       <button class="btn btn-primary" id="checkoutBtn" style="display:none;margin-top:24px" onclick="buyTier(window.selectedTier)">Continue to checkout</button>
     </div>
   </div>
@@ -541,7 +542,14 @@ window.GenPiPrint={ specs:PRINT_SPECS, cropToAspect:cropToAspect, printUrl:print
 /* ---- checkout + print-order config (fill these once the accounts exist) ---- */
 var CLOUDINARY_CLOUD="dbwoxqsa4";     // Cloudinary cloud name
 var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
-var PAYMENT_LINKS={ digital:"", print:"", collector:"" };  // Stripe Payment Link URLs
+// Stripe Payment Links — TEST MODE (sandbox). A real card will decline, which is correct
+// until go-live. The post-payment redirect to thankyou.html is configured per-link in the
+// Stripe dashboard, not here — a Payment Link's success URL cannot be set from the query string.
+var PAYMENT_LINKS={
+  digital:  "https://buy.stripe.com/9B628ramcedtggA1cP3Je00",
+  print:    "https://buy.stripe.com/bJefZhbqg2uLe8s7Bd3Je01",
+  collector:"https://buy.stripe.com/aFadR9amc3yP3tOdZB3Je02"
+};
 // NOTE: uploadArtwork is NOT called on generate. It is called at BUY-CLICK, inside buyTier(),
 // immediately before the redirect to Stripe — see the comment there for why that timing matters.
 async function uploadArtwork(dataUrl){
@@ -917,6 +925,17 @@ async function doGenerate(){
   function shot(l){ return '<div class="dm-shot" data-slot="'+l+'">screenshot slot — '+l+'</div>'; }
   function stepsHTML(a){ return '<ol class="dm-steps"><li>'+a.join('</li><li>')+'</li></ol>'; }
   function linkBtn(u,l){ return '<a class="dm-link" href="'+u+'" target="_blank" rel="noopener">'+l+' ↗</a>'; }
+  /* Apple Health is phone-centric, so people often arrive here without their export.
+     mailto: keeps this working with no backend and collects no address — the mail
+     stays entirely between the user and their own mail client. */
+  function reminderBtn(){
+    var subject='Export my Apple Health data for GenPi';
+    var lines=['Reminder to myself:','','1. Open the Health app on my iPhone',
+      '2. Tap my profile picture (top right)','3. Scroll down to Export All Health Data',
+      '4. Wait for export.zip, then Save to Files','5. Go back to '+location.origin+location.pathname+' and upload it',''];
+    return '<a class="dm-link" href="mailto:?subject='+encodeURIComponent(subject)+
+           '&body='+encodeURIComponent(lines.join('\n'))+'">Send me a reminder to do this later ✉</a>';
+  }
   function privLine(t){ return '<div class="dm-privacy"><svg class="ico" viewBox="0 0 24 24" style="width:16px;height:16px;color:var(--mint);flex:none;margin-top:2px"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>'+(t||PRIV_DNA)+'</span></div>'; }
   function keepLine(){ return '<div class="dm-keep">'+KEEP+'</div>'; }
 
@@ -931,7 +950,7 @@ async function doGenerate(){
       formats:'Accepted: the downloaded .zip (contains a .txt — we extract it automatically).' }
   };
   var APPLE={ title:'Get your Apple Health export', link:null,
-    steps:['On your iPhone, open the <b>Health</b> app.','Tap your <b>profile picture</b> (top right).','Scroll down → <b>Export All Health Data</b>.','Wait for it to build <b>export.zip</b>, then <b>Save to Files</b> (or AirDrop to your computer).','Come back to this tab (same phone, or your computer) and upload the <b>export.zip</b>.'],
+    steps:['On your iPhone, open the <b>Health</b> app.','Tap your <b>profile picture</b> (top right).','Scroll down → <b>Export All Health Data</b>.','Wait for it to build <b>export.zip</b>, then <b>Save to Files</b> (or AirDrop to your computer).','Come back to this tab (on the same phone, or your computer) and upload the <b>export.zip</b>.'],
     expect:'This one’s done in the Health app on your iPhone — export, then upload the zip here. Best done on the phone you’re browsing from.',
     formats:'Accepted: export.zip from the Health app.' };
   var OURA="Nothing to download — just tap Connect Oura and approve access. Your Oura data is processed in the moment to create your artwork, then deleted immediately — never stored, never sold.";
@@ -953,9 +972,11 @@ async function doGenerate(){
   function closeModal(){ if(overlay){ overlay.hidden=true; if(lastFocus&&lastFocus.focus) lastFocus.focus(); } }
 
   function guideHTML(g,eyebrow){
+    var isApple=/Apple/.test(eyebrow);
     return '<div class="dm-eyebrow">'+eyebrow+'</div><div class="dm-title">'+g.title+'</div>'+keepLine()+
       (g.link?linkBtn(g.link,g.linkLabel):'')+stepsHTML(g.steps)+shot(eyebrow.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+
-      '<div class="dm-expect">'+g.expect+'</div><div class="dm-formats">'+g.formats+'</div>'+privLine(/Apple/.test(eyebrow)?PRIV_BIO:PRIV_DNA);
+      '<div class="dm-expect">'+g.expect+'</div><div class="dm-formats">'+g.formats+'</div>'+
+      (isApple?reminderBtn():'')+privLine(isApple?PRIV_BIO:PRIV_DNA);
   }
   function render(kind){
     if(kind==='dna'){
