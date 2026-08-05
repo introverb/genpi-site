@@ -603,6 +603,12 @@ async function buyTier(tier){
     if(prep.tooLarge){ alert("Your artwork came out larger than our image host accepts — nothing has been charged. Please email genepiart@gmail.com and we'll sort it out."); return; }
     if(!h){ alert("We couldn't prepare your artwork for checkout — nothing has been charged. Please try again."); return; }
     r.hostedUrl=h.url; r.publicId=h.publicId;
+    // hostedUrl is the STORED MASTER — WebP on the DNA path, lossless and deliberate.
+    // It must never be sent to a printer. These are the print-ready 4:4:4 JPEG deliveries;
+    // fulfilment should always use these (or rebuild them from publicId), never hostedUrl.
+    r.printUrls={ digital:printUrl(h.publicId,'digital'),
+                  print:printUrl(h.publicId,'print'),
+                  collector:printUrl(h.publicId,'collector') };
   }
   var ref=r.publicId+'__'+tier;
   var url=link+((link.indexOf('?')>-1?'&':'?')+'client_reference_id='+encodeURIComponent(ref));
