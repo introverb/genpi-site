@@ -615,7 +615,11 @@ async function buyTier(tier){
                   print:printUrl(h.publicId,'print'),
                   collector:printUrl(h.publicId,'collector') };
   }
-  var ref=r.publicId+'__'+tier;
+  // Third segment carries the source so the mint service can render rule-3's category label
+  // ("Genetics — 23andMe"). Nothing else records which source made a given publicId.
+  // Make parses this with first(split(x;"__")) and a contains-check on the tier, so neither
+  // is index-based and both tolerate the extra segment.
+  var ref=r.publicId+'__'+tier+(r.sourceSlug?('__'+r.sourceSlug):'');
   var url=link+((link.indexOf('?')>-1?'&':'?')+'client_reference_id='+encodeURIComponent(ref));
   window.location.href=url;
 }
@@ -657,6 +661,9 @@ var OURA_CLIENT_ID="05c01ed2-e45f-4373-86eb-74c8fc0dde9a";
 var OURA_SCOPES="daily heartrate spo2";
 var ouraToken=null;
 
+// Stable slugs — these travel in client_reference_id and the mint service maps them to the
+// category labels rule 3 requires. Do not rename them once an order has used one.
+var SOURCE_SLUGS={'23andMe':'23andme','Ancestry.com':'ancestry','Apple Health':'applehealth','Oura Ring':'oura'};
 function isBio(s){ return s==='Apple Health'||s==='Oura Ring'; }
 function pad2(n){ return (n<10?'0':'')+n; }
 function isoDay(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
@@ -827,6 +834,9 @@ async function doGenerate(){
   if(stopProgress) stopProgress();
   var url=(typeof res==='string')?res:(res&&(res.dataUrl||res.imageUrl));
   if(url){ showResult(url); drawPrintRender(url); }
+  // Captured at generate time, not read from selectedSource at buy-click, so it cannot drift
+  // if the picker is touched afterwards.
+  if(res&&typeof res==='object') res.sourceSlug=SOURCE_SLUGS[src]||'';
   window.__genpiResult=res;
   // The finished PNG is uploaded at BUY-CLICK (see buyTier), never on generate — so nothing
   // leaves the browser unless the visitor actually chooses to buy.
