@@ -546,14 +546,14 @@ var CLOUDINARY_PRESET="lhshygsi";    // Cloudinary UNSIGNED upload preset name
 // is buy.stripe.com/test_XXXX, a live one is buy.stripe.com/XXXX with no prefix. The three
 // originals had no prefix and were LIVE: Stripe rejected a 4242 test card with "your request
 // was in live mode". Never wire a URL here without that prefix.
-// Digital and Collector are intentionally empty until their sandbox links are rebuilt;
-// buyTier() degrades to an honest "checkout is being set up" message for those.
+// buyTier() still degrades to an honest "checkout is being set up" message if any entry is
+// blank — that guard stays as a fallback even though all three are wired.
 // The post-payment redirect to thankyou.html is set per-link in the Stripe dashboard, not
 // here — a Payment Link's success URL cannot be passed on the query string.
 var PAYMENT_LINKS={
-  digital:  "",
-  print:    "https://buy.stripe.com/test_bJefZhbqg2uLe8s7Bd3Je01",
-  collector:""
+  digital:  "https://buy.stripe.com/test_aFadR9amc3yP3tOdZB3Je02",   // $10, no shipping
+  print:    "https://buy.stripe.com/test_bJefZhbqg2uLe8s7Bd3Je01",   // $40, shipping
+  collector:"https://buy.stripe.com/test_7sYbJ11PG3yP6G0g7J3Je03"    // $90, shipping
 };
 // NOTE: uploadArtwork is NOT called on generate. It is called at BUY-CLICK, inside buyTier(),
 // immediately before the redirect to Stripe — see the comment there for why that timing matters.
