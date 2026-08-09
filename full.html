@@ -198,17 +198,6 @@
   .prev-col{display:flex;flex-direction:column;align-items:center;gap:8px}
   .prev-cap{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
   .prev-col.art .prev-cap{color:var(--acc-soft)}
-  /* ---- PRELAUNCH variant only: sources visible but not clickable; pulsing email capture ---- */
-  .opt{pointer-events:none;opacity:.55}
-  #launchCap{max-width:520px;margin:26px auto 4px;padding:22px 24px;border-radius:16px;text-align:center;
-    border:1px solid rgba(240,207,106,.5);background:rgba(240,207,106,.05);animation:lpulse 2.6s ease-in-out infinite}
-  #launchCap .lc-title{font-weight:600;font-size:1.15rem;color:#f0cf6a;margin-bottom:6px}
-  #launchCap .lc-sub{color:var(--muted);font-size:.95rem;line-height:1.55;margin-bottom:14px}
-  #launchCap form{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-  #launchCap input{flex:1;min-width:200px;padding:12px 16px;border-radius:999px;border:1px solid var(--hair2);
-    background:rgba(255,255,255,.05);color:var(--text);font:inherit}
-  #lcNote{display:none;margin-top:14px;color:var(--mint);font-size:.92rem;line-height:1.55}
-  @keyframes lpulse{0%,100%{box-shadow:0 0 22px rgba(240,207,106,.18)}50%{box-shadow:0 0 52px rgba(240,207,106,.45)}}
   #previewCanvas{height:300px;width:auto;border-radius:8px;border:1px solid rgba(240,207,106,.5);
     box-shadow:0 0 34px rgba(255,255,255,.14),0 0 90px rgba(240,135,154,.12)}
   #renderCanvas{height:300px;width:auto;max-width:100%;border-radius:8px;border:1px solid rgba(240,207,106,.5);
@@ -307,18 +296,7 @@
       </div>
     </div>
 
-    <div id="launchCap">
-      <div class="lc-title">Launching this month</div>
-      <div class="lc-sub">GenPi is in final testing. Leave your email and we&rsquo;ll tell you the moment it&rsquo;s live.</div>
-      <form id="lcForm">
-        <input type="email" id="lcEmail" required placeholder="you@email.com" autocomplete="email">
-        <button class="btn btn-primary" type="submit">Notify me</button>
-      </form>
-      <div id="lcNote">You&rsquo;re on the list &mdash; we&rsquo;ll email you the moment it&rsquo;s time. Meanwhile, get your
-        data ready: request your raw DNA file from 23andMe or Ancestry (it can take a day or two to arrive),
-        or make sure Apple Health or your Oura ring has a few days of recent data.</div>
-    </div>
-    <div id="dataHelp" class="datahelp" hidden></div>
+    <div id="dataHelp" class="datahelp"></div>
 
     <div class="reveal" id="srcReveal">
       <div class="divider"></div>
@@ -1111,35 +1089,6 @@ async function doGenerate(){
   /* TODO(phase 2): "email me the steps" capture — blocked on the email-sending setup. Do not build yet. */
 
   if(document.readyState!=='loading') updateDataHelp(); else document.addEventListener('DOMContentLoaded', updateDataHelp);
-})();
-</script>
-<script>
-/* PRELAUNCH variant: sources are display-only and the email capture is the only action.
-   Set LAUNCH_WEBHOOK to a Make webhook URL for silent collection; until then the fallback
-   opens the visitor's own mail client addressed to us, which needs no backend at all. */
-var LAUNCH_WEBHOOK="";
-window.updateDataHelp=function(){};
-window.pickCat=function(){};
-(function(){
-  var f=document.getElementById('lcForm'); if(!f) return;
-  f.addEventListener('submit', async function(ev){
-    ev.preventDefault();
-    var em=document.getElementById('lcEmail').value.trim(); if(!em) return;
-    var btn=f.querySelector('button'); btn.disabled=true; btn.textContent='One sec…';
-    var ok=false;
-    if(LAUNCH_WEBHOOK){
-      try{ var r=await fetch(LAUNCH_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:em,source:'prelaunch',at:new Date().toISOString()})}); ok=r.ok; }catch(e){}
-    }
-    if(!ok && !LAUNCH_WEBHOOK){
-      location.href='mailto:genepiart@gmail.com?subject='+encodeURIComponent('Notify me — GenPi launch')+
-        '&body='+encodeURIComponent('Please email me when GenPi goes live: '+em);
-      ok=true;   // the mail client now has it; treat as submitted
-    }
-    btn.disabled=false; btn.textContent='Notify me';
-    if(ok){ document.getElementById('lcNote').style.display='block'; f.querySelector('input').value=''; }
-    else{ alert("That didn't go through — please try again."); }
-  });
 })();
 </script>
 </body>
